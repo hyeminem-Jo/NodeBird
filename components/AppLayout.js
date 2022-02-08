@@ -1,20 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/router";
 import PropTypes from 'prop-types';
 import Link from 'next/link';
 import { Menu, Input, Row, Col } from 'antd';
+import styled from 'styled-components';
 
-// import UserProfile from '../components/UserProfile';
-// import LoginForm from '../components/LoginForm';
+import UserProfile from '../components/UserProfile';
+import LoginForm from '../components/LoginForm';
+
+// antd 컴포넌트를 커스텀해서 사용
+// styled-component 안에 antd 컴포넌트 태그이름을 넣어서 사용(커스텀)
+const SearchInput = styled(Input.Search)`
+  vertical-align: middle;
+`
 
 const AppLayout = ({ children }) => {
   const router = useRouter() // key 에러
 
   // 더미 데이터 생성
-  // const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   return (
-    <div>
+    <>
       <Menu mode="horizontal" selectedKeys={[router.pathname]}>
         <Menu.Item key="/">
           <Link href="/"><a>노드버드</a></Link>
@@ -25,7 +32,8 @@ const AppLayout = ({ children }) => {
         </Menu.Item>
 
         <Menu.Item>
-        <Input.Search enterButton style={{verticalAlign: 'middle'}} />
+          {/* antd 의 컴포넌트의 경우 styled-component 에 넣어 커스텀해서 사용 */}
+        <SearchInput enterButton />
         </Menu.Item>
 
         <Menu.Item key="/signup">
@@ -36,7 +44,9 @@ const AppLayout = ({ children }) => {
     <Row gutter={30}>
       <Col xs={24} sm={6}>
         {/* 로그인이 된 상태면 유저의 프로필을, 아니면 로그인창을 띄움 */}
-        {/* {isLoggedIn ? <UserProfile /> : <LoginForm />} */}
+        {isLoggedIn ? <UserProfile setIsLoggedIn={setIsLoggedIn} /> : <LoginForm setIsLoggedIn={setIsLoggedIn} />}
+        {/* LoginForm 컴포넌트로 setIsLoggedIn 넘겨주기 */}
+        {/* LoginForm 컴포넌트에서 setIsLoggedIn 가 true 가 되면 화면이 <UserProfile /> 로 바뀜  */}
       </Col>
 
       <Col xs={24} sm={12}>
@@ -48,12 +58,10 @@ const AppLayout = ({ children }) => {
         {/* 다른 페이지에서 접근하는 target _blank 는 보안상의 위험이 있기 때문에 rel="noreferrer" 를 적어주어야 한다. */}
       </Col>
     </Row>
-    </div>
+    </>
   );
 };
 
-// props 로 넘기는 것들은 propTypes 로 타입을 검사해주면 좋다.
-// children 은 리액트의 노드로, 화면에 그릴 수 있는 모든 것들(return 안의 모든 것)이 node 다.
 AppLayout.propTypes = {
   children: PropTypes.node.isRequired,
 }

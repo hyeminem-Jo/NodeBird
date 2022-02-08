@@ -1,32 +1,76 @@
-import React, { useState } from "react";
-import { Form } from "antd";
+import React, { useCallback, useState } from "react";
+import { Form, Input, Button } from "antd";
+import Link from "next/link";
+import styled from "styled-components";
+import Proptypes from 'prop-types'
 
-// 리액트 form 은 따로 라이브러리를 써보는 것이 좋다.
+const ButtonWrapper = styled.div`
+  margin-top: 10px;
+`;
 
-const LoginForm = () => {
+const FormWrapper = styled(Form)`
+  padding: 12px;
+`
+
+const LoginForm = ({ setIsLoggedIn }) => {
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
+
+  // 컴포넌트에 props 로 넘겨주는 함수는 useCallBack 을 써주어야 최적화가 된다.
+  const onChangeId = useCallback((e) => {
+    setId(e.target.value);
+  }, []);
+
+  // 위의 함수와 거의 비슷한 구조로 되어있는데, 이런 중복은 커스텀훅으로 처리할 수 있다.
+  const onChangePassword = useCallback((e) => {
+    setPassword(e.target.value);
+  }, []);
+
+  // antd 컴포넌트 에서는 e.preventDefault() 사용 x (onFinish 에 이미 적용되어있음)
+  const onSubmitForm = useCallback(() => {
+    // e.preventDefault(); x
+    setIsLoggedIn(true);
+  }, [id, password]);
+
   return (
-    <Form>
+    <FormWrapper onFinish={onSubmitForm}>
       <div>
+        {/* label: input의 이름을 적는 태그로 htmlFor에 input의 아이디나 네임을 적어 인풋과 연결함 */}
         <label htmlFor="user-id">아이디</label>
         <br />
-        <input name="user-id" value={id} onChange={onChangeId} required></input>
+        <Input name="user-id" value={id} onChange={onChangeId} required></Input>
       </div>
       <div>
         <label htmlFor="user-password">비밀번호</label>
-        <input
+        <br />
+        <Input
           name="user-password"
           type="password"
           value={password}
           onChange={onChangePassword}
           required
-        ></input>
+        ></Input>
       </div>
-      <div></div>
-      <div></div>
-    </Form>
+
+      <ButtonWrapper>
+        <Button type="primary" htmlType="submit" loading={false}>
+          {/* primary 는 메인 컬러를 담당 */}
+          로그인
+        </Button>
+        <Link href="/signup">
+          <a>
+            <Button>회원가입</Button>
+          </a>
+        </Link>{" "}
+        {/* href 는 a 가 아닌 Link 에 넣는 것이 좋음 */}
+      </ButtonWrapper>
+    </FormWrapper>
   );
 };
+
+
+LoginForm.propTypes = {
+  setIsLoggedIn: Proptypes.bool.isRequired,
+}
 
 export default LoginForm;
