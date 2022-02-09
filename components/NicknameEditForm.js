@@ -7,6 +7,8 @@ const NicknameEditForm = () => {
   return (
     <Form style={style}>
       {/* addonBefore 등 props 들은 모두 antd 공식 문서 참고 */}
+
+      {/* 닉네임 수정하는 Form */}
       <Input.Search addonBefore="닉네임" enterButton="수정" />
     </Form>
   );

@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import { Form, Input, Button } from "antd";
 import Link from "next/link";
 import styled from "styled-components";
 import Proptypes from 'prop-types'
+import useInput from "../hooks/useInput";
 
 const ButtonWrapper = styled.div`
   margin-top: 10px;
@@ -13,18 +14,20 @@ const FormWrapper = styled(Form)`
 `
 
 const LoginForm = ({ setIsLoggedIn }) => {
-  const [id, setId] = useState("");
-  const [password, setPassword] = useState("");
 
-  // 컴포넌트에 props 로 넘겨주는 함수는 useCallBack 을 써주어야 최적화가 된다.
-  const onChangeId = useCallback((e) => {
-    setId(e.target.value);
-  }, []);
-
-  // 위의 함수와 거의 비슷한 구조로 되어있는데, 이런 중복은 커스텀훅으로 처리할 수 있다.
-  const onChangePassword = useCallback((e) => {
-    setPassword(e.target.value);
-  }, []);
+  const [id, onChangeId] = useInput('');
+  const [password, onChangePassword] = useInput('');
+  
+  
+  // const [id, setId] = useState("");
+  // const onChangeId = useCallback((e) => {
+  //   setId(e.target.value);
+  // }, []);
+  
+  // const [password, setPassword] = useState("");
+  // const onChangePassword = useCallback((e) => {
+  //   setPassword(e.target.value);
+  // }, []);
 
   // antd 컴포넌트 에서는 e.preventDefault() 사용 x (onFinish 에 이미 적용되어있음)
   const onSubmitForm = useCallback(() => {
@@ -70,7 +73,10 @@ const LoginForm = ({ setIsLoggedIn }) => {
 
 
 LoginForm.propTypes = {
-  setIsLoggedIn: Proptypes.bool.isRequired,
+  setIsLoggedIn: Proptypes.func.isRequired,
 }
+
+// isLoggedInd => bool (불리언 타입 false, true)
+// setIsLoggedInd => func (함수 타입)
 
 export default LoginForm;
