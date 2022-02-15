@@ -27,6 +27,7 @@ const FollowList = ({ header, data }) => {
           </List.Item>
         )}
       />
+      
     </>
   );
 };

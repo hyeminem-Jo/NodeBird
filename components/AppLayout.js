@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/router";
 import PropTypes from 'prop-types';
 import Link from 'next/link';
 import { Menu, Input, Row, Col } from 'antd';
-import styled from 'styled-components';
+import styled from 'styled-components'; 
+import { useSelector } from 'react-redux';
 
 import UserProfile from '../components/UserProfile';
 import LoginForm from '../components/LoginForm';
@@ -18,7 +19,10 @@ const AppLayout = ({ children }) => {
   const router = useRouter() // key 에러
 
   // 더미 데이터 생성
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // redux 로 부터 데이터를 불러온다.
+  const isLoggedIn = useSelector((state) => state.user.isLoggedIn)
 
   return (
     <>
@@ -44,9 +48,9 @@ const AppLayout = ({ children }) => {
     <Row gutter={30}>
       <Col xs={24} sm={6}>
         {/* 로그인이 된 상태면 유저의 프로필을, 아니면 로그인창을 띄움 */}
-        {isLoggedIn ? <UserProfile setIsLoggedIn={setIsLoggedIn} /> : <LoginForm setIsLoggedIn={setIsLoggedIn} />}
+        {isLoggedIn ? <UserProfile /> : <LoginForm />}
+        {/* {isLoggedIn ? <UserProfile setIsLoggedIn={setIsLoggedIn} /> : <LoginForm setIsLoggedIn={setIsLoggedIn} />} => 이제 데이터를 넘겨주지 않아도 됨 */}
         {/* LoginForm 컴포넌트로 setIsLoggedIn 넘겨주기 */}
-        {/* LoginForm 컴포넌트에서 setIsLoggedIn 가 true 가 되면 화면이 <UserProfile /> 로 바뀜  */}
       </Col>
 
       <Col xs={24} sm={12}>

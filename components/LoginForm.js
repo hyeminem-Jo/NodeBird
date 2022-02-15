@@ -2,8 +2,10 @@ import React, { useCallback } from "react";
 import { Form, Input, Button } from "antd";
 import Link from "next/link";
 import styled from "styled-components";
-import Proptypes from 'prop-types'
 import useInput from "../hooks/useInput";
+
+import { useDispatch } from "react-redux";
+import { loginAction } from "../reducers/user";
 
 const ButtonWrapper = styled.div`
   margin-top: 10px;
@@ -11,28 +13,20 @@ const ButtonWrapper = styled.div`
 
 const FormWrapper = styled(Form)`
   padding: 12px;
-`
+`;
 
-const LoginForm = ({ setIsLoggedIn }) => {
+const LoginForm = () => {
+  const dispatch = useDispatch();
 
-  const [id, onChangeId] = useInput('');
-  const [password, onChangePassword] = useInput('');
-  
-  
-  // const [id, setId] = useState("");
-  // const onChangeId = useCallback((e) => {
-  //   setId(e.target.value);
-  // }, []);
-  
-  // const [password, setPassword] = useState("");
-  // const onChangePassword = useCallback((e) => {
-  //   setPassword(e.target.value);
-  // }, []);
+  // 커스텀 훅으로 중복 제거 후
+  const [id, onChangeId] = useInput("");
+  const [password, onChangePassword] = useInput("");
 
   // antd 컴포넌트 에서는 e.preventDefault() 사용 x (onFinish 에 이미 적용되어있음)
   const onSubmitForm = useCallback(() => {
     // e.preventDefault(); x
-    setIsLoggedIn(true);
+    console.log(id, password);
+    dispatch(loginAction({ id, password }));
   }, [id, password]);
 
   return (
@@ -70,13 +64,5 @@ const LoginForm = ({ setIsLoggedIn }) => {
     </FormWrapper>
   );
 };
-
-
-LoginForm.propTypes = {
-  setIsLoggedIn: Proptypes.func.isRequired,
-}
-
-// isLoggedInd => bool (불리언 타입 false, true)
-// setIsLoggedInd => func (함수 타입)
 
 export default LoginForm;
