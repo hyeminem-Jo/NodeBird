@@ -2,7 +2,7 @@
 
 export const initialState = {
   isLoggedIn: false,
-  user: null,
+  me: null,
   signUpData: {},
   loginData: {},
 };
@@ -11,7 +11,7 @@ export const initialState = {
 export const loginAction = (data) => {
   return {
     type: "LOG_IN",
-    data,
+    data, // { id, password }
   };
 };
 
@@ -28,13 +28,13 @@ const reducer = (state = initialState, action) => {
       return {
         ...state,
         isLoggedIn: true,
-        user: action.data, // 객체 user 말고
+        me: action.data, // 객체 me 말고
       };
     case "LOG_OUT":
       return {
         ...state,
         isLoggedIn: false,
-        user: null, // 객체 user 말고
+        me: null, // 객체 me 말고
       };
     default:
       return state;

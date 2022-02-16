@@ -23,6 +23,8 @@ const AppLayout = ({ children }) => {
 
   // redux 로 부터 데이터를 불러온다.
   const isLoggedIn = useSelector((state) => state.user.isLoggedIn)
+  // 아래처럼 구조분해로 해도 됨 (개인취향)
+  // const { isLoggedIn } = useSelector((state) => state.user); 
 
   return (
     <>
