@@ -5,9 +5,25 @@ import Link from 'next/link';
 import { Menu, Input, Row, Col } from 'antd';
 import styled from 'styled-components'; 
 import { useSelector } from 'react-redux';
+import { createGlobalStyle } from "styled-components";
 
 import UserProfile from '../components/UserProfile';
 import LoginForm from '../components/LoginForm';
+
+const Global = createGlobalStyle`
+  .ant-row {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  .ant-col:first-child {
+    padding-left: 0 !important;
+  }
+
+  .ant-col:last-child {
+    padding-right: 0 !important;
+  }
+`
 
 // antd 컴포넌트를 커스텀해서 사용
 // styled-component 안에 antd 컴포넌트 태그이름을 넣어서 사용(커스텀)
@@ -28,6 +44,7 @@ const AppLayout = ({ children }) => {
 
   return (
     <>
+    <Global />
       <Menu mode="horizontal" selectedKeys={[router.pathname]}>
         <Menu.Item key="/">
           <Link href="/"><a>노드버드</a></Link>

@@ -6,6 +6,7 @@ import { RetweetOutlined, HeartOutlined, MessageOutlined, EllipsisOutlined, Hear
 import CommentForm from "./CommentForm";
 
 import PostImages from "./PostImages";
+import PostCardContent from "./PostCardContent";
 
 // antd 기능: Card 컴포넌트 기능 cover
 // post 에 Images 가 하나 라도 있다면 이미지 표현
@@ -70,7 +71,8 @@ const PostCard = ({ post }) => {
         <Card.Meta 
           avatar={<Avatar>{post.User.nickname[0]}</Avatar>}
           title={post.User.nickname}
-          description={post.content}
+          description={<PostCardContent postData={post.content} />}
+          // description={post.content} 에서, 해시태그 기능을 위해 아예 컴포넌트로 빼준다.
         />
 
         {/* <Image />
