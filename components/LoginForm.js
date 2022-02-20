@@ -4,8 +4,8 @@ import Link from "next/link";
 import styled from "styled-components";
 import useInput from "../hooks/useInput";
 
-import { useDispatch } from "react-redux";
-import { loginAction } from "../reducers/user";
+import { useDispatch, useSelector } from "react-redux";
+import { loginRequestAction } from "../reducers/user";
 
 const ButtonWrapper = styled.div`
   margin-top: 10px;
@@ -18,6 +18,8 @@ const FormWrapper = styled(Form)`
 const LoginForm = () => {
   const dispatch = useDispatch();
 
+  const { isLoggingIn } = useSelector((state) => state.user);
+
   // 커스텀 훅으로 중복 제거 후
   const [id, onChangeId] = useInput("");
   const [password, onChangePassword] = useInput("");
@@ -26,7 +28,7 @@ const LoginForm = () => {
   const onSubmitForm = useCallback(() => {
     // e.preventDefault(); x
     console.log(id, password);
-    dispatch(loginAction({ id, password }));
+    dispatch(loginRequestAction({ id, password }));
   }, [id, password]);
 
   return (
@@ -50,7 +52,7 @@ const LoginForm = () => {
       </div>
 
       <ButtonWrapper>
-        <Button type="primary" htmlType="submit" loading={false}>
+        <Button type="primary" htmlType="submit" loading={isLoggingIn}>
           {/* primary 는 메인 컬러를 담당 */}
           로그인
         </Button>

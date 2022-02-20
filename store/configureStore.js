@@ -3,21 +3,31 @@
 import { createWrapper } from "next-redux-wrapper";
 import { applyMiddleware, compose, createStore } from "redux";
 import { composeWithDevTools } from 'redux-devtools-extension';
+import createSagaMiddleware from 'redux-saga';
 
 import reducer from "../reducers";
+import rootSaga from '../sagas';
+
+// // ex) 엄청 간단한 미들웨어:
+// const loggerMiddleware = ({ dispatch, getState }) => (next) => (action) => {
+//   console.log(action) // action 을 실행하기 전에 console.log() 를 한번 실행해주는 미들웨어
+//   return next(action);
+// }
 
 const configureStore = () => {
-  const middlewares = [];
+  const sagaMiddleware = createSagaMiddleware()
+  const middlewares = [sagaMiddleware];
+  // const middlewares = [sagaMiddleware, loggerMiddleware];
+  // 개발모드, 배포모드 둘 다 thunk 미들웨어가 장착됐다.
   
   // enhancer: 리덕스의 기능이 확장된 것
   const enhancer = process.env.NODE_ENV === 'production'
   // 개발용 미들웨어와 배포용 미들웨어는 다름
     ? compose(applyMiddleware(...middlewares)) // 배포용
-    : composeWithDevTools(applyMiddleware(...middlewares)) // 개발용 - 여기에 dev tool 을 넣어줌
-    // composeWithDevTools 를 사용할 때 history 가 쌓이면 메모리도 많이 차지하고, 중앙데이터들이 어떻게 변하는지 전부 보이기 때문에 보안에 취약할 수 있다.
-    // 그러므로 배포용일 땐 데브 툴(composeWithDevTools) 을 연결하지 않고, 개발용일 때는 composeWithDevTools 를 연결해준다.
+    : composeWithDevTools(applyMiddleware(...middlewares)) // 개발용 
 
   const store = createStore(reducer, enhancer);
+  store.sagaTask = sagaMiddleware.run(rootSaga);
   return store; // state , reducer 를 포함한 것
 };
 
