@@ -1,23 +1,28 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Form, Input, Button } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { addPost } from "../reducers/post";
+import useInput from "../hooks/useInput";
 
 const PostForm = () => {
-  const { imagePaths } = useSelector((state) => state.post);
+  const { imagePaths, addPostDone } = useSelector((state) => state.post);
   const dispatch = useDispatch();
-  const imageInput = useRef(); // 실제 돔에 접근
-  const [text, setText] = useState("");
-
-  const onChangeText = useCallback((e) => {
-    setText(e.target.value)
-  }, [])
+  const [text, onChangeText, setText] = useInput("");
+  
+  // 서버 요청을 받고 난 후에 여부가 결정나기 때문에 비동기 처리를 위해선 useEffect 를 쓰는 것으로 추측 (signup 에서는 컴포넌트가 처리되기 전에 그 자리에서 if 문이 실시되는 것으로 추측)
+  useEffect(() => {
+    if (addPostDone) {
+      setText('')
+    }
+  }, [addPostDone])
 
   const onSubmit = useCallback(() => {
-    dispatch(addPost);
-    setText(''); //  post 제출 후 input 창 초기화
-  }, [])
+    dispatch(addPost(text));
+    // setText(''); //  post 제출 후 input 창 초기화
+    // 서버에 요청을 한 후 바로 내용을 삭제를 했는데, 서버 요청이 실패해 버리면 이미 삭제된 내용이 문제가 되어버린다.
+  }, [text])
 
+  const imageInput = useRef(); // 실제 돔에 접근
   const onClickImageUpload = useCallback(() => {
     imageInput.current.click();
   }, [imageInput.current])

@@ -4,15 +4,20 @@ import Head from "next/head";
 import { Button, Checkbox, Form, Input } from "antd";
 import useInput from "../hooks/useInput";
 import styled from "styled-components";
+import { SIGN_UP_REQUEST } from "../reducers/user";
+import { useDispatch, useSelector } from "react-redux";
 
 const ErrorMessage = styled.div`
   color: red;
 `;
 
 const Signup = () => {
+  const dispatch = useDispatch();
+  const { signUpLoading } = useSelector((state) => state.user);
+  
   // 커스텀 훅으로 중복 제거
   // => 다음과 같이 훅들이 중복되면 커스텀 훅으로 간단하게 사용할 수 있다.
-  const [id, onChangeId] = useInput("");
+  const [email, onChangeEmail] = useInput("");
   const [nickname, onChangeNickname] = useInput("");
   const [password, onChangePassword] = useInput("");
 
@@ -49,8 +54,12 @@ const Signup = () => {
     }
 
     // 서버로 데이터가 잘 가는지 확인
-    console.log(id, nickname, password)
-  }, [password, passwordCheck, term]);
+    console.log(email, nickname, password);
+    dispatch({
+      type: SIGN_UP_REQUEST,
+      data: { email, nickname, password },
+    })
+  }, [email, password, passwordCheck, term]);
 
   return (
     <AppLayout>
@@ -59,9 +68,9 @@ const Signup = () => {
       </Head>
       <Form onFinish={onSubmit}>
         <div>
-          <label htmlFor="user-id">아이디</label>
+          <label htmlFor="user-email">이메일</label>
           <br />
-          <Input name="uset-id" value={id} required onChange={onChangeId} />
+          <Input name="uset-email" type="email" value={email} required onChange={onChangeEmail} />
         </div>
         <div>
           <label htmlFor="user-nick">닉네임</label>
@@ -109,7 +118,7 @@ const Signup = () => {
         </div>
         {/* 제출 버튼 (primary => 파란색 버튼) */}
         <div style={{ marginTop: 10 }}>
-          <Button type="primary" htmlType="submit">가입하기</Button>
+          <Button type="primary" htmlType="submit" loading={signUpLoading}>가입하기</Button>
           {/* htmlFor="submit" 인 상태의 버튼을 누르면 Form 의 onFinish 발동 */}
         </div>
       </Form>
