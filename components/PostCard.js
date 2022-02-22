@@ -1,18 +1,21 @@
 import React, { useCallback, useState } from "react";
 import PropTypes from "prop-types";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Card, Button, Popover, Avatar, List, Comment } from "antd";
 import { RetweetOutlined, HeartOutlined, MessageOutlined, EllipsisOutlined, HeartTwoTone } from "@ant-design/icons";
 import CommentForm from "./CommentForm";
 
 import PostImages from "./PostImages";
 import PostCardContent from "./PostCardContent";
+import { REMOVE_POST_REQUEST } from "../reducers/post";
 
 // antd 기능: Card 컴포넌트 기능 cover
 // post 에 Images 가 하나 라도 있다면 이미지 표현
 
 const PostCard = ({ post }) => {
   
+  const dispatch = useDispatch();
+  const { removePostLoading } = useSelector((state) => state.post);
   const { me } = useSelector((state) => state.user);
   const id = me && me.id // 만약 id 가 있는 상태(로그인 상태)면 me 와 me.id 가 있음
   // 줄인 문법: me?.id (optional chaining)
@@ -35,6 +38,12 @@ const PostCard = ({ post }) => {
     setCommentFormOpened((prev) => !prev);
   }, [])
 
+  const onRemovePost = useCallback(() => {
+    dispatch({
+      type: REMOVE_POST_REQUEST,
+      data: post.id,
+    })
+  }, [])
   
   return (
     <div style={{ marginBottom: 20 }}>
@@ -57,7 +66,7 @@ const PostCard = ({ post }) => {
                 ( 
                   <>
                     <Button>수정</Button>
-                    <Button type="danger">삭제</Button>
+                    <Button type="danger" loading={removePostLoading} onClick={onRemovePost}>삭제</Button>
                   </>
                 ) : <Button>신고</Button>
               }

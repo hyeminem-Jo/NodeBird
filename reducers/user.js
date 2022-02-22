@@ -1,5 +1,7 @@
 // reducers > user.js
 
+import produce from "immer";
+
 export const initialState = {
   logInLoading: false, // 로그인 시도중
   logInDone: false,
@@ -12,6 +14,10 @@ export const initialState = {
   signUpLoading: false, // 회원가입 시도중
   signUpDone: false,
   signUpError: null,
+
+  changeNicknameLoading: false, // 닉네임 변경 시도중
+  changeNicknameDone: false,
+  changeNicknameError: null,
 
   me: null,
   signUpData: {},
@@ -31,6 +37,10 @@ export const SIGN_UP_REQUEST = "SIGN_UP_REQUEST";
 export const SIGN_UP_SUCCESS = "SIGN_UP_SUCCESS";
 export const SIGN_UP_FAILURE = "SIGN_UP_FAILURE";
 
+export const CHANGE_NICKNAME_REQUEST = "CHANGE_NICKNAME_REQUEST";
+export const CHANGE_NICKNAME_SUCCESS = "CHANGE_NICKNAME_SUCCESS";
+export const CHANGE_NICKNAME_FAILURE = "CHANGE_NICKNAME_FAILURE";
+
 export const FOLLOW_REQUEST = "FOLLOW_REQUEST";
 export const FOLLOW_SUCCESS = "FOLLOW_SUCCESS";
 export const FOLLOW_FAILURE = "FOLLOW_FAILURE";
@@ -39,14 +49,22 @@ export const UNFOLLOW_REQUEST = "UNFOLLOW_REQUEST";
 export const UNFOLLOW_SUCCESS = "UNFOLLOW_SUCCESS";
 export const UNFOLLOW_FAILURE = "UNFOLLOW_FAILURE";
 
+// user reducer 의 상태를 바꿀 수 있는 action 생성
+export const ADD_POST_TO_ME = "ADD_POST_TO_ME";
+export const REMOVE_POST_OF_ME = "REMOVE_POST_OF_ME";
+
 // 가짜 유저 데이터의 id, nickname 을 post.js 의 기존 가짜 게시물 데이터(dummyPost) 의 id 와 nickname 을 같게 해서 수정, 삭제 기능을 테스트해보려는 듯??
 const dummyUser = (data) => ({
   ...data,  // { email, password }
   nickname: '제로초',
   id: 1,
-  Posts: [],
-  Followings: [],
-  Followers: [],
+  Posts: [{id: 1}],
+  Followings: [
+    {nickname: '부기초'}, {nickname: 'hyejin'}, {nickname: 'heeseung'}
+  ],
+  Followers: [
+    {nickname: '부기초'}, {nickname: 'hyejin'}, {nickname: 'heeseung'}
+  ],
 })
 
 // 로그인 요청하는 action
@@ -64,90 +82,82 @@ export const logoutRequestAction = () => {
   };
 };
 
-// // 회원가입 요청하는 action
-// export const signupRequestAction = (data) => {
-//   return {
-//     type: SIGN_UP_REQUEST,
-//     data, // { email, nickname, password }
-//   };
-// };
-
 const reducer = (state = initialState, action) => {
-  switch (action.type) {
-    // 로그인 액션 처리
-    case LOG_IN_REQUEST:
-      // console.log('login action - reducer')
-      return {
-        ...state,
-        logInLoading: true,
-        logInError: null,
-        logInDone: false, // 초기화
-      };
-    case LOG_IN_SUCCESS:
-      return {
-        ...state,
-        logInLoading: false,
-        logInDone: true,
-        me: dummyUser(action.data),
-        // me: { ...action.data, nickname: 'jinny' },
-        // me 는 현재 더미데이터이며, action.data 를 받는 함수로 빼자
-      };
-    case LOG_IN_FAILURE:
-      return {
-        ...state,
-        logInLoading: false,
-        logInError: action.error, 
-      };
+  return produce(state, (draft) => {
+    switch (action.type) {
+      // 로그인 액션 처리 --------------------------
+      case LOG_IN_REQUEST:
+          draft.logInLoading = true;
+          draft.logInError = null;
+          draft.logInDone = false; // 초기화
+          break;
+      case LOG_IN_SUCCESS:
+          draft.logInLoading = false;
+          draft.logInDone = true;
+          draft.me = dummyUser(action.data);
+          break;
+      case LOG_IN_FAILURE:
+          draft.logInLoading = false;
+          draft.logInError = action.error;
+          break;
 
-    // 로그아웃 액션 처리
-    case LOG_OUT_REQUEST:
-      return {
-        ...state,
-        logOutLoading: true, 
-        logOutError: null,
-        logOutDone: false, // 초기화
-      };
-
-    case LOG_OUT_SUCCESS:
-      return {
-        ...state,
-        logOutLoading: false,
-        logOutDone: true,
-        me: null, // 객체 me 말고
-      };
-
-    case LOG_OUT_FAILURE:
-      return {
-        ...state,
-        logOutLoading: false,
-        logOutError: action.error,
-      };
-
-    // 회원가입 액션 처리
-    case SIGN_UP_REQUEST:
-      return {
-        ...state,
-        signUpLoading: true, 
-        signUpError: null,
-        signUpDone: false, // 초기화
-      };
-
-    case SIGN_UP_SUCCESS:
-      return {
-        ...state,
-        signUpLoading: false,
-        signUpDone: true,
-      };
-
-    case SIGN_UP_FAILURE:
-      return {
-        ...state,
-        signUpLoading: false,
-        signUpError: action.error,
-      };
-    default:
-      return state;
-  }
+      // 로그아웃 액션 처리 --------------------------
+      case LOG_OUT_REQUEST:
+          draft.logOutLoading = true; 
+          draft.logOutError = null;
+          draft.logOutDone = false; // 초기화
+          break;
+      case LOG_OUT_SUCCESS:
+          draft.logOutLoading = false;
+          draft.logOutDone = true;
+          draft.me = null; // 객체 me 말고
+          break;
+      case LOG_OUT_FAILURE:
+          draft.logOutLoading = false;
+          draft.logOutError = action.error;
+          break;
+  
+      // 회원가입 액션 처리 --------------------------
+      case SIGN_UP_REQUEST:
+          draft.signUpLoading = true; 
+          draft.signUpError = null;
+          draft.signUpDone = false; // 초기화
+          break;
+      case SIGN_UP_SUCCESS:
+          draft.signUpLoading = false;
+          draft.signUpDone = true;
+          break;
+      case SIGN_UP_FAILURE:
+          draft.signUpLoading = false
+          draft.signUpError = action.error
+          break;
+      // 닉네임 변경 액션 처리 --------------------------
+      case CHANGE_NICKNAME_REQUEST:
+          draft.changeNicknameLoading = true 
+          draft.changeNicknameError = null
+          draft.changeNicknameDone = false // 초기화
+          break;
+      case CHANGE_NICKNAME_SUCCESS:
+          draft.changeNicknameLoading = false;
+          draft.changeNicknameDone = true;
+          break;
+      case CHANGE_NICKNAME_FAILURE:
+          draft.changeNicknameLoading = false;
+          draft.changeNicknameError = action.error;
+          break;
+  
+      // 게시글 수 변경 액션 처리 --------------------------
+      case ADD_POST_TO_ME:
+        draft.me.Posts.unshift({ id: action.data });
+        break;
+      case REMOVE_POST_OF_ME: // 불변성을 지키며 지우는 방법은 filter() 
+        draft.me.Posts = draft.me.Posts.filter((v) => v.id !== action.data)
+        // 제거도 원래 unshift() 쓰지만 코드가 한줄 적어서 filter() 를 씀. 나중에 성능에 문제 생길 때 unshift() 로 바꾸면 됨
+        break;
+        
+      default: break;
+    }
+  })
 };
 
 export default reducer;

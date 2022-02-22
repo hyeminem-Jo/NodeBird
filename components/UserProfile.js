@@ -22,7 +22,6 @@ const UserProfile = () => {
         <div key="followings">팔로잉<br/>{me.Followings.length}</div>,
         <div key="followings">팔로워<br/>{me.Followers.length}</div>,
       ]}
-    
     >
       <Card.Meta
         avatar={<Avatar>{me.nickname[0]}</Avatar>}
