@@ -7,6 +7,7 @@ import CommentForm from "./CommentForm";
 
 import PostImages from "./PostImages";
 import PostCardContent from "./PostCardContent";
+import FollowButton from "./FollowButton";
 import { REMOVE_POST_REQUEST } from "../reducers/post";
 
 // antd 기능: Card 컴포넌트 기능 cover
@@ -75,6 +76,8 @@ const PostCard = ({ post }) => {
             <EllipsisOutlined />
           </Popover>,
         ]}
+        // 로그인 했을 때만 팔로우 할 수 있는 권한
+        extra={id && <FollowButton post={post}/>}
       >
         {/* 그냥 post.User.nickname 의 첫번째 글짜를 아바타로 ex) 구글 프로필에 '조' */} 
         <Card.Meta 

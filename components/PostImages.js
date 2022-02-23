@@ -31,8 +31,10 @@ const PostImages = ({ images }) => {
   if (images.length === 2) { // 이미지가 두 개 일땐 이미지 비율 50 대 50
     return (
       <>
-        <img role="presentation" style={{ width: "50%", display: 'inline-block' }} src={images[0].src} alt={images[0].src} onClick={onZoom} />
-        <img role="presentation" style={{ width: "50%", display: 'inline-block' }} src={images[1].src} alt={images[1].src} onClick={onZoom} />
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <img role="presentation" style={{ width: "49.2%", display: 'inline-block' }} src={images[0].src} alt={images[0].src} onClick={onZoom} />
+          <img role="presentation" style={{ width: "49.2%", display: 'inline-block' }} src={images[1].src} alt={images[1].src} onClick={onZoom} />
+        </div>
         {/* role="presentation" : 시각장애인을 위한 배려() */}
         {/* 스크린리더에서 굳이 클릭할 필요 없는 것일 때 */}
 
