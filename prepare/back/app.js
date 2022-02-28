@@ -1,7 +1,10 @@
 const express = require('express'); 
+const cors = require('cors');
+
 const postRouter = require('./routes/post');
 const userRouter = require('./routes/user');
 const db = require('./models'); // sequelize 가 들어잇는 db
+const passportConfig = require('./passport')
 
 const app = express(); // express 서버, 한 번 호출해줘야함
 
@@ -12,8 +15,14 @@ db.sequelize.sync() // promise
   })
   .catch(console.error);
 
+passportConfig();
+
 // front 에서 받은 data 를 해석하여 req.body 에 넣어줌
 // .use 안에 들어가는 것은 미들웨어
+app.use(cors({
+  origin: '*', // 모든 주소를 허용
+  // credentials: 'false', // false 는 기본값
+}))
 app.use(express.json()); // front 에서 json 형태로 데이터를 보내줬을 때
 app.use(express.urlencoded({ extended: true })); // form submit 을 했을 때
 // ** 코드가 다른 라우터들보다 상단에 위치해야함

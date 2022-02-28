@@ -1,24 +1,23 @@
 // configureStore.js
 
-import { createWrapper } from "next-redux-wrapper";
 import { applyMiddleware, compose, createStore } from "redux";
-import { composeWithDevTools } from 'redux-devtools-extension';
 import createSagaMiddleware from 'redux-saga';
+import { createWrapper } from "next-redux-wrapper";
+import { composeWithDevTools } from 'redux-devtools-extension';
 
 import reducer from "../reducers";
 import rootSaga from '../sagas';
 
-// // ex) 엄청 간단한 미들웨어:
-// const loggerMiddleware = ({ dispatch, getState }) => (next) => (action) => {
-//   console.log(action) // action 을 실행하기 전에 console.log() 를 한번 실행해주는 미들웨어
-//   return next(action);
-// }
+// ex) 엄청 간단한 미들웨어:
+const loggerMiddleware = ({ dispatch, getState }) => (next) => (action) => {
+  console.log(action) // action 을 실행하기 전에 console.log() 를 한번 실행해주는 미들웨어
+  return next(action);
+}
 
 const configureStore = () => {
   const sagaMiddleware = createSagaMiddleware()
-  const middlewares = [sagaMiddleware];
-  // const middlewares = [sagaMiddleware, loggerMiddleware];
-  // 개발모드, 배포모드 둘 다 thunk 미들웨어가 장착됐다.
+  // const middlewares = [sagaMiddleware];
+  const middlewares = [sagaMiddleware, loggerMiddleware];
   
   // enhancer: 리덕스의 기능이 확장된 것
   const enhancer = process.env.NODE_ENV === 'production'

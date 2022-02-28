@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import AppLayout from "../components/AppLayout";
 import Head from "next/head";
 import { Button, Checkbox, Form, Input } from "antd";
@@ -6,6 +6,7 @@ import useInput from "../hooks/useInput";
 import styled from "styled-components";
 import { SIGN_UP_REQUEST } from "../reducers/user";
 import { useDispatch, useSelector } from "react-redux";
+import Router from "next/router";
 
 const ErrorMessage = styled.div`
   color: red;
@@ -13,7 +14,20 @@ const ErrorMessage = styled.div`
 
 const Signup = () => {
   const dispatch = useDispatch();
-  const { signUpLoading } = useSelector((state) => state.user);
+  const { signUpLoading, signUpDone, signUpError } = useSelector((state) => state.user);
+
+  // 회원가입 완료되면 메인페이지로 이동하기
+  useEffect(() => {
+    if (signUpDone) {
+      Router.push('/');
+    }
+  }, [signUpDone])
+  // 사용중인 아이디 입력하면 에러나기
+  useEffect(() => {
+    if (signUpError) {
+      alert('이미 사용중인 아이디 입니다.');
+    }
+  }, [signUpError])
   
   // 커스텀 훅으로 중복 제거
   // => 다음과 같이 훅들이 중복되면 커스텀 훅으로 간단하게 사용할 수 있다.
