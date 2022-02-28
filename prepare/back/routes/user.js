@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const { User } = require('../models'); // 사용자 테이블 불러오기
-// 구조분해 없이 그냥 db 로 불러오면 db.User 로 써야함
+// 구조분해 없이 그냥 db 로 불러오면 db.User 로 써야함요
 
 const router = express.Router();
 
