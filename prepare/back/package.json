@@ -1,0 +1,21 @@
+{
+  "name": "react-nodebird-back",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon app"
+  },
+  "author": "JoHyeJin",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "express": "^4.17.3",
+    "mysql2": "^2.3.3",
+    "sequelize": "^6.16.2",
+    "sequelize-cli": "^6.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}

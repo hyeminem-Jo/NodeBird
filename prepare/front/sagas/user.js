@@ -41,7 +41,7 @@ function logOutAPI() {
 function* logOut() {
   try { 
     yield delay(1000);
-    // const result = yield call(logOutAPI) 
+    // const result = yield call(logOutAPI)
     yield put({ 
       type: LOG_OUT_SUCCESS,
     })
@@ -54,7 +54,7 @@ function* logOut() {
 }
 
 // follow --------------
-function followAPI() { 
+function followAPI() {
   return axios.post('/api/follow');
 }
 
@@ -96,14 +96,15 @@ function* unfollow(action) {
 }
 
 // signUp --------------
-function signUpAPI() { 
-  return axios.post('/api/signup');
+function signUpAPI(data) { // data: {email, nickname, password}
+  return axios.post('http://localhost:3065/user', data); 
+  // 백엔드 서버 주소로
 }
 
-function* signUp() {
+function* signUp(action) { // action.data: {email, nickname, password}
   try { 
-    yield delay(1000); // 1초 후에
-    // 여기서 throw new Error('') 를 하면 catch (에러)부분이 동작함
+    const result = yield call(signUpAPI, action.data);
+    console.log(result);
     yield put({ 
       type: SIGN_UP_SUCCESS,
     })

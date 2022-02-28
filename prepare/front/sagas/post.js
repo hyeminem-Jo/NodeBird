@@ -47,6 +47,12 @@ function addPostAPI(data) {
   return axios.post("/api/post", data);
 }
 
+// function addPostAPI(postData) {
+//   return axios.post("/post", postData, {
+//     widthCredentials: true,
+//   });
+// }
+
 function* addPost(action) {
   try {
     yield delay(1000);

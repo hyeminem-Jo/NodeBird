@@ -14,7 +14,8 @@ const Profile = () => {
     if (!(me && me.id)) {
       Router.push('/');
     }
-  }, [me && me.id]) // me.id
+  }, [me && me.id]) // me.id 
+  // 굳이 me.id 를 넣은 이유: me 는 객체이며, dependency 배열에 객체를 넣는 것은 매우 안좋은 습관이다. (참조 문제)
 
   // 로그인을 아직 안했을 때 프로필을 못들어가게 return null 로 방지 
   if (!me) {

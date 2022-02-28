@@ -52,8 +52,6 @@ const Signup = () => {
     if (!term) {
       return setTermError(true);
     }
-
-    // 서버로 데이터가 잘 가는지 확인
     console.log(email, nickname, password);
     dispatch({
       type: SIGN_UP_REQUEST,
