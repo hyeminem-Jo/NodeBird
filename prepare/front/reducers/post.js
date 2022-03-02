@@ -87,26 +87,14 @@ export const addComment = (data) => ({
   data,
 });
 
-// 현재 게시글도 실제로 저장할 수 없기 때문에 가짜 객체(더미데이터)로 만들어준다.
-const dummyPost = (data) => ({
-  id: data.id,
-  content: data.content,
-  User: {
-    id: 1,
-    nickname: "제로초",
-  },
-  Images: [],
-  Comments: [],
-});
-
-const dummyComment = (data) => ({
-  id: shortId.generate(),
-  User: {
-    id: 1,
-    nickname: '제로초',
-  },
-  content: data,
-})
+// const dummyComment = (data) => ({
+//   id: shortId.generate(),
+//   User: {
+//     id: 1,
+//     nickname: '제로초',
+//   },
+//   content: data,
+// })
 
 // reducer: [이전 state] 를 [action]을 통해 받아 다음 state 를 만들어줌 (불변성을 지키면서)
 // => 하지만 immer 를 쓰면 불변성을 지킬 필요가 없다.
@@ -153,7 +141,8 @@ const reducer = (state = initialState, action) => {
         draft.addPostDone = true;
         // 이전 게시글 위에 추가 위치되도록 앞에 표기
         // action.data = { id, content }
-        draft.mainPosts.unshift(dummyPost(action.data)) // 불변성 지킬 필요 x 
+        draft.mainPosts.unshift(action.data);
+        // immer 활용한 코드: draft.mainPosts.unshift(dummyPost(action.data)) // 불변성 지킬 필요 x 
         // 이전 코드 => mainPosts: [dummyPost(action.data), ...state.mainPosts]; 
         break;
       case ADD_POST_FAILURE:
@@ -194,9 +183,10 @@ const reducer = (state = initialState, action) => {
         // action.data.userId, 를 받음
 
         // 1. 게시글 찾기
-        const post = draft.mainPosts.find((v) => v.id === action.data.postId);
+        const post = draft.mainPosts.find((v) => v.id === action.data.PostId);
         // 2. 게시글에 새로운 것 추가
-        post.Comments.unshift(dummyComment(action.data.content));
+        post.Comments.unshift(action.data); // 하나의 객체
+        // post.Comments.unshift(dummyComment(action.data.content));
         draft.addCommentLoading = false;
         draft.addCommentDone = true;
         break;

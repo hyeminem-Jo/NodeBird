@@ -14,18 +14,29 @@ const ErrorMessage = styled.div`
 
 const Signup = () => {
   const dispatch = useDispatch();
-  const { signUpLoading, signUpDone, signUpError } = useSelector((state) => state.user);
+  const { signUpLoading, signUpDone, signUpError, me } = useSelector((state) => state.user);
+
+  // 로그인이 성공하면 회원가입 페이지에서 메인페이지로 이동
+  // 로그인 하면 me 가 생성되기 때문에 me 를 썼지만 logInDone 으로 써도 됨
+  useEffect(() => {
+    if (me && me.id) {
+      Router.replace('/'); 
+      // replace(): 현재 페이지(회원가입) 기록이 아예 사라져서 뒤로 가기를 눌러도 이전페이지로 돌아가지 않음
+      // push(): push 는 뒤로가기를 누르면 다시 이전페이지로 돌아가버림
+    }
+  }, [me && me.id]) // me.id 
 
   // 회원가입 완료되면 메인페이지로 이동하기
   useEffect(() => {
     if (signUpDone) {
-      Router.push('/');
+      Router.replace('/');
     }
   }, [signUpDone])
+  
   // 사용중인 아이디 입력하면 에러나기
   useEffect(() => {
     if (signUpError) {
-      alert('이미 사용중인 아이디 입니다.');
+      alert(signUpError);
     }
   }, [signUpError])
   

@@ -2,7 +2,9 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const passport = require('passport');
 
-const { User } = require('../models'); // 사용자 테이블 불러오기
+const { User, Post } = require('../models'); // 사용자 테이블 불러오기
+const { isLoggedIn, isNotLoggedIn } = require('./middlewares');
+const db = require('../models');
 // 구조분해 없이 그냥 db 로 불러오면 db.User 로 써야함요
 
 const router = express.Router();
@@ -11,7 +13,9 @@ const router = express.Router();
 // done 은 콜백의 개념이라 세개의 인자가 다음의 passport.authenticate('local', ) 의 두번째 인자로 전달됨 
 // => done(null, false, { reason: '존재하지 않는 이메일입니다!' })
 // => (err, user, info) 는 매개변수라 마음대로 지음
-router.post('/login', (req, res, next) => { // 미들웨어 확장(express 기법)
+router.post('/login', isNotLoggedIn,(req, res, next) => { // 미들웨어 확장(express 기법)
+  // isNotLoggedIn: 로그인 안한 사람이 로그인 접근 가능
+  // next() 로 인해 다음 미들웨어 (passport.authenticate()) 로 이동 
   passport.authenticate('local', (err, user, info) => {
     if (err) { // 서버쪽에 에러가 있는 경우
       console.error(err);
@@ -37,13 +41,45 @@ router.post('/login', (req, res, next) => { // 미들웨어 확장(express 기�
         console.error(loginErr)
         return next(loginErr); 
       }
-      return res.json(user); // 사용자 정보 프론트로 넘겨줌
+      // 비밀번호를 제외한 모든 유저정보
+      // 사용자 정보가 있는데 사용자를 다시 찾는 이유: 
+      // 현재 부족한 사용자 정보에 대해 추가나 삭제를 해줌 (Posts, Followings ..)
+      const fullUserWithoutPassword = await User.findOne({
+        where: { id: user.id },
+        // attributes: db 에서 '받고 싶은 데이터만' 들고올 수 있다.
+        // 이렇게 하면 createdAt, updatedAt, password 는 안가져와짐
+        // attributes: ['id', 'nickname', 'email'],
+        attributes: {
+          // exclude: 제외하고자 하는 데이터만 입력하고 싶을 때
+          exclude: ['password'] // 비밀번호만 제외해서 가져옴
+        },
+        // Posts, Followings, Followers 에 대한 데이터 추가
+        include: [ // include 할 때 as 가 있으면 as 까지 같이 작성
+          {
+            model: Post,
+          },
+          {
+            model: User,
+            as: 'Followings'
+          },
+          {
+            model: User,
+            as: 'Followers'
+          },
+        ]
+      })
+      // req.login() 을 할 때 내부적으로 setHeader 에서 쿠키를 보내고, 자동으로 세션과 연결시켜준다.
+      // req.setHeader('Cookie', 'cxlhy..')
+      // 서버쪽에서는 데이터를 통채로 들고 있고, 프론트에는 랜덤한 문자열만 보내 보안의 위협을 최소로 한다. => "쿠키"
+      // 서버쪽에 통채로 데이터를 들고 있는 것이 "세션"
+      return res.status(200).json(fullUserWithoutPassword); // 사용자 정보 프론트로 넘겨줌
     })
   })(req, res, next);
 }) // POST /user/login
 
 // app.js 에 있는 "/user" 와 "/" 가 합쳐짐
-router.post('/', async (req, res, next) => { // POST /user/
+router.post('/', isNotLoggedIn,async (req, res, next) => { // POST /user/
+  // isNotLoggedIn: 로그인 안한 사람이 회원가입 접근 가능
   try {
     // email 이 겹치는 유저가 있으면 exUser 에 저장
     const exUser = await User.findOne({ 
@@ -68,7 +104,7 @@ router.post('/', async (req, res, next) => { // POST /user/
       nickname: req.body.nickname, // data {nickname}
       password: hashedPassword, // data {password}
     });
-    res.status(200).send("ok"); // 요청에 대한 성공적인 응답: 200
+    res.status(201).send("ok"); // 요청에 대한 성공적인 응답: 200
   } catch (error) {
     console.error(error);
     next(error); // status(500)
@@ -76,5 +112,13 @@ router.post('/', async (req, res, next) => { // POST /user/
     // 에러처리를 따로따로 하기 귀찮을 때 catch 에서 한번에 next 로 보내줌
   }
 });
+
+router.post('/logout', isLoggedIn, (req, res) => { // 세션, 쿠키 지우면 끝
+  // isNotLoggedIn: 로그인 한 사람이 로그아웃 접근 가능
+  // router.post('/user/logout', (req, res) => { // 세션, 쿠키 지우면 끝
+  req.logout();
+  req.session.destroy(); // 저장된 쿠키, id 제거
+  res.send('ok') // 로그아웃 성공
+})
 
 module.exports = router;

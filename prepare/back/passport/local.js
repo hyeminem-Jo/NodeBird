@@ -18,6 +18,7 @@ module.exports = () => {
       const user = await User.findOne({ // 조건은 where 안에 적음
         where: { email } // es6 부터 { email: email } 를 줄일 수 있음
       });
+      // 1. 이메일(아이디) 검사
       if (!user) { // 이메일 틀림(회원가입된 사용자가 아니면 로그인 안됨)
         // 클라이언트 실패(1)
         return done(null, false, { reason: '존재하지 않는 이메일입니다!' });
@@ -26,8 +27,8 @@ module.exports = () => {
         // done 은 콜백의 개념이라 세개의 인자가 passport.authenticate('local', ) 의 두번째 인자로 전달됨
         // res.status(403);
       }
-  
-      // 존비밀번호 비교 (이메일 통과 후 비밀번호 선별)
+      // 2. 비밀번호 검사 
+      // 비밀번호 비교 (이메일 통과 후 비밀번호 선별)
       // 유저가 입력한 password 와 db 에 저장된 password 비교
       // user 에 user.email, nickname, password, createdAt 등 테이블 객체가 전부 들어있다. (findOne 은 documents 객체 하나를 반환)
       // compare 는 비동기 함수 이므로 await 을 붙여주어야함

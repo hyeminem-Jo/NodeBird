@@ -1,7 +1,7 @@
 // sagas > post.js
 
 import axios from "axios";
-import { all, fork, delay, put, takeLatest, throttle } from "redux-saga/effects";
+import { all, fork, delay, put, takeLatest, throttle, call } from "redux-saga/effects";
 import shortId from "shortid";
 
 import { ADD_POST_TO_ME, REMOVE_POST_OF_ME } from "../reducers/user";
@@ -44,32 +44,21 @@ function* loadPosts(action) {
 
 // addPost --------------
 function addPostAPI(data) {
-  return axios.post("/api/post", data);
+  return axios.post("/post", { content: data });
 }
-
-// function addPostAPI(postData) {
-//   return axios.post("/post", postData, {
-//     widthCredentials: true,
-//   });
-// }
 
 function* addPost(action) {
   try {
-    yield delay(1000);
-
-    const id = shortId.generate();
+    const result = yield call(addPostAPI, action.data)
     // action.data 를 받는 형태는 자유롭게 할 수 있다. (게시글의 id 값도 받아야하기 때문에 객체 형태로 바꿈)
     yield put({
       type: ADD_POST_SUCCESS,
-      data: {
-        id,
-        content: action.data, // text
-      },
+      data: result.data,  
     });
     // 내가 올리는 게시글의 id 를 post.js reducer 뿐 아니라 user.js reducer 에도 공유
-    yield put({
+    yield put({ // 게시글 수 변경 (user action)
       type: ADD_POST_TO_ME,
-      data: id,
+      data: result.data.id, // model 객체에서 id 는 자동으로 생성됨
     });
   } catch (err) {
     yield put({
@@ -92,7 +81,7 @@ function* removePost(action) {
       data: action.data // 삭제 게시글 id 
     });
     // from user reducer
-    yield put({
+    yield put({ // 게시글 수 변경 (user action)
       type: REMOVE_POST_OF_ME,
       data: action.data, // 삭제 게시글 id
     });
@@ -106,16 +95,18 @@ function* removePost(action) {
 
 // addComment --------------
 function addCommentAPI(data) {
-  return axios.post(`/api/post/${data.postId}/comment`, data);
+  return axios.post(`/post/${data.postId}/comment`, data);
+  // 중간에 게시글 id 은 안넣어도 작동하지만, 의미를 살려서 넣어주면 좋다
+  // => 어떤 게시글의 댓글인지 알 수 있음
+  // POST /post/1/comment
 }
 
 function* addComment(action) {
   try {
-    yield delay(1000);
-    // const result = yield call(addCommentAPI, action.data)
+    const result = yield call(addCommentAPI, action.data)
     yield put({
       type: ADD_COMMENT_SUCCESS,
-      data: action.data,
+      data: result.data,
     });
   } catch (err) {
     yield put({
@@ -150,3 +141,10 @@ export default function* postSaga() {
     fork(watchAddComment)
   ]);
 }
+
+
+// function addPostAPI(postData) {
+//   return axios.post("/post", postData, {
+//     widthCredentials: true,
+//   });
+// }

@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Form, Input, Button } from "antd";
 import Link from "next/link";
 import styled from "styled-components";
@@ -18,7 +18,14 @@ const FormWrapper = styled(Form)`
 const LoginForm = () => {
   const dispatch = useDispatch();
 
-  const { logInLoading } = useSelector((state) => state.user);
+  const { logInLoading, logInError } = useSelector((state) => state.user);
+
+  // 로그인 에러 발생 시 
+  useEffect(() => {
+    if (logInError) {
+      alert(logInError);
+    }
+  }, [logInError]);
 
   // 커스텀 훅으로 중복 제거 후
   const [email, onChangeEmail] = useInput("");
