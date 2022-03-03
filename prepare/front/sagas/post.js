@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { all, fork, delay, put, takeLatest, throttle, call } from "redux-saga/effects";
-import shortId from "shortid";
+// import shortId from "shortid";
 
 import { ADD_POST_TO_ME, REMOVE_POST_OF_ME } from "../reducers/user";
 import {
@@ -18,21 +18,21 @@ import {
   LOAD_POSTS_REQUEST,
   LOAD_POSTS_SUCCESS,
   LOAD_POSTS_FAILURE,
-  generateDummyPost,
+  // generateDummyPost,
 } from "../reducers/post";
 
 // loadPosts --------------
+// 서버에서 게시글들 불러오는 요청(게시글 조회, get)
 function loadPostsAPI(data) {
-  return axios.get("/api/posts", data);
+  return axios.get("/posts", data);
 }
 
 function* loadPosts(action) {
   try {
-    yield delay(1000); // 서버에서 못가져오니 delay 로 서버에서 가져오는 흉내 (비동기)
-    // LOAD_POSTS_SUCCESS 할 때 데이터 10개를 가짜로 가져옴
+    const result = yield call(loadPostsAPI, action.data)
     yield put({
       type: LOAD_POSTS_SUCCESS,
-      data: generateDummyPost(10)
+      data: result.data, // 게시글들 배열 [{}, {}, {}...]
     });
   } catch (err) {
     yield put({
@@ -41,6 +41,22 @@ function* loadPosts(action) {
     });
   }
 }
+
+// function* loadPosts(action) {
+//   try {
+//     yield delay(1000); // 서버에서 못가져오니 delay 로 서버에서 가져오는 흉내 (비동기)
+//     // LOAD_POSTS_SUCCESS 할 때 데이터 10개를 가짜로 가져옴
+//     yield put({
+//       type: LOAD_POSTS_SUCCESS,
+//       data: generateDummyPost(10)
+//     });
+//   } catch (err) {
+//     yield put({
+//       type: LOAD_POSTS_FAILURE,
+//       data: err.response.data,
+//     });
+//   }
+// }
 
 // addPost --------------
 function addPostAPI(data) {
@@ -109,6 +125,7 @@ function* addComment(action) {
       data: result.data,
     });
   } catch (err) {
+    console.error(err);
     yield put({
       type: ADD_COMMENT_FAILURE,
       data: err.response.data,

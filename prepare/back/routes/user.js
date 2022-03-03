@@ -8,6 +8,52 @@ const db = require('../models');
 // 구조분해 없이 그냥 db 로 불러오면 db.User 로 써야함요
 
 const router = express.Router();
+// CRUD에서 조회는 GET, 등록은 POST, 수정은 PUT, 삭제는 DELETE
+
+// 새로고침 시 매번 사용자 정보 복구 (새로고침해도 브라우저에 쿠키가 남아있어 쿠키를 서버에 보냄)
+// 로그인 상태에서 새로고침 시 항상 브라우저에서 요청을 하고 쿠키 id 로 서버에서 사용자 정보 복구 후 브라우저로 보냄 => 서버에서 로그인 되었는지 조회 (GET)
+// => 하지만 사용자가 항상 로그인 상태인 것이 아닌 로그아웃인 상태도 있을 것이고, 로그아웃인 상태에서도 새로고침하면 로그인 요청이 될 수도 있다. 이 경우 req.user.id 에서 에러가남
+// => 이유: deserealizeUser 는 로그인 이후로만 실행하고, 로그인 상태가 아니라면 req.user 가 존재 x
+// => 해결: (복구된 정보)req.user 가 존재하는지(로그인 되었는지) 먼저 확인 후 브라우저로 보냄
+router.get('/', async (req, res, next) => { // GET /user/
+  try {
+    if (req.user) { // 복구할 때도 마찬가지로 "완성된" user 정보를 가져온다.
+      const fullUserWithoutPassword = await User.findOne({
+        // 로그인 이후로는 항상 라우터 접근 전 deserealizeUser 에 들러 쿠키의 id 를 통해 복구된 사용자 정보(user) 를 req.user 에 담음
+        where: { id: req.user.id },
+        attributes: {
+          exclude: ['password'] 
+        },
+        include: [ 
+          {
+            model: Post,
+            attributes: ['id'],
+            // 서버로부터 필요한 데이터만 불러오기
+            // 게시글 내용, 팔로잉, 팔로워까지 전부 통채로 가져오면 데이터 용량이 크기 때문에 id 만 가져옴
+            // 첫 화면에서는 게시글, 팔로잉, 팔로워의 갯수(length) 만 필요
+          },
+          {
+            model: User,
+            as: 'Followings',
+            attributes: ['id'],
+          },
+          {
+            model: User,
+            as: 'Followers',
+            attributes: ['id'],
+          },
+        ]
+      })
+      res.status(200).json(fullUserWithoutPassword); 
+      // 로그인 상태에서 새로고침 시 서버에서 사용자 정보 복구 후 브라우저로 보냄
+    } else {
+      res.status(200).json(null); // 로그아웃 때 새로고침 시 아무것도 안보내면 됨
+    }
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+})
 
 // local 에서 만든 passport 전략을 user/login 부분에 실행
 // done 은 콜백의 개념이라 세개의 인자가 다음의 passport.authenticate('local', ) 의 두번째 인자로 전달됨 
@@ -41,6 +87,9 @@ router.post('/login', isNotLoggedIn,(req, res, next) => { // 미들웨어 확장
         console.error(loginErr)
         return next(loginErr); 
       }
+
+      // User 에 데이터 추가, 삭제해서 정보를 "완성"한 뒤 서버에 요청
+      // User 에 기본적인 정보(email, password 등) 밖에 없으므로, 연관된 데이터를 모델에서 연관시켰던 데이터로 가져와 완성한 채로 가져온다.
       // 비밀번호를 제외한 모든 유저정보
       // 사용자 정보가 있는데 사용자를 다시 찾는 이유: 
       // 현재 부족한 사용자 정보에 대해 추가나 삭제를 해줌 (Posts, Followings ..)
@@ -57,14 +106,20 @@ router.post('/login', isNotLoggedIn,(req, res, next) => { // 미들웨어 확장
         include: [ // include 할 때 as 가 있으면 as 까지 같이 작성
           {
             model: Post,
+            attributes: ['id'],
+            // 서버로부터 필요한 데이터만 불러오기
+            // 게시글 내용, 팔로잉, 팔로워까지 전부 통채로 가져오면 데이터 용량이 크기 때문에 id 만 가져옴
+            // 첫 화면에서는 게시글, 팔로잉, 팔로워의 갯수(length) 만 필요
           },
           {
             model: User,
-            as: 'Followings'
+            as: 'Followings',
+            attributes: ['id'],
           },
           {
             model: User,
-            as: 'Followers'
+            as: 'Followers',
+            attributes: ['id'],
           },
         ]
       })

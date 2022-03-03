@@ -1,8 +1,6 @@
 // reducers > post.js
 
-import shortId from 'shortid';
 import produce from 'immer';
-import faker from 'faker';
 
 export const initialState = {
   mainPosts: [], // 실제로는 이렇게 비어있는 채로 서버에서 받는다. 
@@ -25,37 +23,6 @@ export const initialState = {
   addCommentDone: false,
   addCommentError: null,
 };
-
-// post 다수로 생성하는 함수
-// concat 을 할 떈 항상 대입(=)을 해줘야 한다.
-// 서버에서 불러오는 데이터를 표현
-export const generateDummyPost = (number) => Array(number).fill().map(() => ({
-  id: shortId.generate(),
-  User: {
-    id: shortId.generate(),
-    nickname: faker.name.findName()
-  },
-  content: faker.lorem.paragraph(),
-  Images: [
-    {
-      id: shortId.generate(),
-      src: 'https://via.placeholder.com/100',
-      // src: 'https://picsum.photos/seed/picsum/200/300',
-      // src: faker.image.imageUrl()
-    },
-    {
-      id: shortId.generate(),
-      src: 'https://via.placeholder.com/100',
-    }
-],
-  Comments: [{
-    User: {
-      id: shortId.generate(),
-      nickname: faker.name.findName()
-    },
-    content: faker.lorem.sentence(), // 한 문장은 sentence
-  }],
-}))
 
 // initialState.mainPosts = initialState.mainPosts.concat(generateDummyPost(10))
 // 강좌에선 해당 코드 없애라 함 맞을까?
@@ -86,15 +53,6 @@ export const addComment = (data) => ({
   type: ADD_COMMENT_REQUEST,
   data,
 });
-
-// const dummyComment = (data) => ({
-//   id: shortId.generate(),
-//   User: {
-//     id: 1,
-//     nickname: '제로초',
-//   },
-//   content: data,
-// })
 
 // reducer: [이전 state] 를 [action]을 통해 받아 다음 state 를 만들어줌 (불변성을 지키면서)
 // => 하지만 immer 를 쓰면 불변성을 지킬 필요가 없다.
@@ -207,54 +165,3 @@ export default reducer;
 // 더미데이터 post 정보에 대한 객체 => 서버 개발자에게 데이터 속성을 어떤식으로 줄건지 미리 물어보면 좋음
 
 // id 나 content 는 게시글 자체의 속성이고 User, Images, Comments 등은 다른 정보들과 합쳐서 주기 때문에 대문자로 표기해준다.
-
-// export const initialState = {
-//   mainPosts: [
-//     // 더미데이터
-//     {
-//       id: 1, // 게시글의 id, 나의 id
-//       // 유저 정보
-//       User: {
-//         id: 1, // 나의 id
-//         nickname: "제로초",
-//       },
-//       content: "첫 번째 게시글 #해시태그 #익스프레스",
-//       // 이미지
-//       Images: [
-//         {
-//           id: shortId.generate(),
-//           src: "https://cdn.pixabay.com/photo/2022/01/27/16/14/heart-6972452_1280.jpg",
-//         },
-//         {
-//           id: shortId.generate(),
-//           src: "https://cdn.pixabay.com/photo/2022/02/11/14/52/waffles-7007465_1280.jpg",
-//         },
-//         {
-//           id: shortId.generate(),
-//           src: "https://cdn.pixabay.com/photo/2022/01/11/18/46/rose-6931259_1280.jpg",
-//         },
-//       ],
-//       // 댓글
-//       Comments: [ // 대문자로 되어있는 속성들은 전부 서버로부터 받아오는 데이터인데, 이 데이터들은 전부 id 가 고유하게 붙어있다.
-//         {
-//           id: shortId.generate(),
-//           User: {
-//             id: shortId.generate(),
-//             nickname: "nero",
-//           },
-//           content: "우와 개정판이 나왔군요~",
-//         },
-//         {
-//           id: shortId.generate(),
-//           User: {
-//             id: shortId.generate(),
-//             nickname: "hero",
-//           },
-//           content: "얼른 사고 싶어요",
-//         },
-//       ],
-//     },
-//   ],
-
-// ...
-// };

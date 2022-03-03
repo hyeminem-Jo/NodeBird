@@ -6,6 +6,8 @@ const { Strategy: LocalStrategy } = require("passport-local");
 const { User } = require('../models'); // 시퀄라이즈 재사용
 const bcrypt = require('bcrypt')
 
+// 로그인 전략
+
 module.exports = () => { 
   passport.use(new LocalStrategy({
     usernameField: 'email', // 아이디 칸

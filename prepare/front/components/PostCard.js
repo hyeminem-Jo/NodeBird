@@ -122,7 +122,7 @@ PostCard.propTypes = {
     id: PropTypes.number,
     User: PropTypes.object, // 이 object 도 shape 로 꼼꼼하게 검사할 수 있다.
     content: PropTypes.string,
-    createdAt: PropTypes.object,
+    createdAt: PropTypes.string,
     Comments: PropTypes.arrayOf(PropTypes.object), // 객체들의 배열
     Images: PropTypes.arrayOf(PropTypes.object)
   }).isRequired,

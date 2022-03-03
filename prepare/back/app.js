@@ -1,11 +1,16 @@
 const express = require('express'); 
-const cors = require('cors');
+const cors = require('cors'); // 도메인 에러 위반 대응
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const passport = require('passport');
-const dotenv = require('dotenv');
+const dotenv = require('dotenv'); // 패스워드 키 보안
+const morgan = require('morgan'); // 요청, 응답 표시
 
 const postRouter = require('./routes/post');
+// posts 라우터를 따로 하나 더 만듬 (단수와 복수의 동작을 철저히 구분)
+// post 라우터에서는 게시글 하나만 쓰고 지우고, 댓글 하나만 쓰고 삭제하고 등.. 
+// posts 라우터에서는 게시글을 여러 개 다룸
+const postsRouter = require('./routes/posts');
 const userRouter = require('./routes/user');
 const db = require('./models'); // sequelize 가 들어잇는 db
 const passportConfig = require('./passport');
@@ -24,8 +29,13 @@ passportConfig();
 
 // front 에서 받은 data 를 해석하여 req.body 에 넣어줌
 // .use 안에 들어가는 것은 미들웨어
+// 미들웨어는 위에서부터 아래로, 왼쪽에서부터 오른쪽으로 실행(순서 중요)
+// 미들웨어는 똑같은 라우터가 있으면, 맨위에 있는 라우터만 실행되고 그 뒤로 실행 x
+app.use(morgan('dev')); 
+// 프론트에서서 백엔드로 요청할 때 요청, 응답이 터미널에 뜸
 app.use(cors({
-  origin: '*', // 모든 주소를 허용
+  origin: 'http://localhost:3060', // credentials: true 를 하면 보안때문에 정확한 주소를 기입해야함
+  credentials: true, // 쿠키도 같이 전달
   // credentials: 'false', // false 는 기본값
 }))
 app.use(express.json()); // front 에서 json 형태로 데이터를 보내줬을 때
@@ -50,18 +60,7 @@ app.get('/', (req, res) => { // 메인페이지('/') 를 가져온다(get)
   res.send('hello express');
 })
 
-app.get('/', (req, res) => { // 메인페이지('/') 를 가져온다(get)
-  res.send('hello api'); // 문자열을 응답
-})
-
-app.get('/posts', (req, res) => {
-  res.json([ 
-    { id: 1, content: 'hello'},
-    { id: 2, content: 'hello2'},
-    { id: 3, content: 'hello3'},
-  ])
-})
-
+app.use('/posts', postsRouter); 
 app.use('/post', postRouter); // => 중복된 것이 바깥으로 빠져나감
 app.use('/user', userRouter); 
 

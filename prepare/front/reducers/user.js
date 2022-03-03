@@ -3,6 +3,10 @@
 import produce from "immer";
 
 export const initialState = {
+  loadUserLoading: false, // 사용자 정보 불러오기 시도중
+  loadUserDone: false,
+  loadUserError: null,
+
   logInLoading: false, // 로그인 시도중
   logInDone: false,
   logInError: null,
@@ -33,6 +37,10 @@ export const initialState = {
 };
 
 // saga 에서도 action 을 써야하기 때문에 export 해주기
+export const LOAD_USER_REQUEST = "LOAD_USER_REQUEST";
+export const LOAD_USER_SUCCESS = "LOAD_USER_SUCCESS";
+export const LOAD_USER_FAILURE = "LOAD_USER_FAILURE";
+
 export const LOG_IN_REQUEST = "LOG_IN_REQUEST";
 export const LOG_IN_SUCCESS = "LOG_IN_SUCCESS";
 export const LOG_IN_FAILURE = "LOG_IN_FAILURE";
@@ -62,22 +70,23 @@ export const ADD_POST_TO_ME = "ADD_POST_TO_ME";
 export const REMOVE_POST_OF_ME = "REMOVE_POST_OF_ME";
 
 // 가짜 유저 데이터의 id, nickname 을 post.js 의 기존 가짜 게시물 데이터(dummyPost) 의 id 와 nickname 을 같게 해서 수정, 삭제 기능을 테스트해보려는 듯??
-const dummyUser = (data) => ({
-  ...data, // { email, password }
-  nickname: "제로초",
-  id: 1,
-  Posts: [{ id: 1 }],
-  Followings: [
-    { nickname: "부기초" },
-    { nickname: "hyejin" },
-    { nickname: "heeseung" },
-  ],
-  Followers: [
-    { nickname: "부기초" },
-    { nickname: "hyejin" },
-    { nickname: "heeseung" },
-  ],
-});
+
+// const dummyUser = (data) => ({
+//   ...data, // { email, password }
+//   nickname: "제로초",
+//   id: 1,
+//   Posts: [{ id: 1 }],
+//   Followings: [
+//     { nickname: "부기초" },
+//     { nickname: "hyejin" },
+//     { nickname: "heeseung" },
+//   ],
+//   Followers: [
+//     { nickname: "부기초" },
+//     { nickname: "hyejin" },
+//     { nickname: "heeseung" },
+//   ],
+// });
 
 // 로그인 요청하는 action
 export const loginRequestAction = (data) => {
@@ -97,6 +106,25 @@ export const logoutRequestAction = () => {
 const reducer = (state = initialState, action) => {
   return produce(state, (draft) => {
     switch (action.type) {
+      // 사용자 정보 불러오기 액션 처리 --------------------------
+      case LOAD_USER_REQUEST:
+        draft.loadUserLoading = true;
+        draft.loadUserError = null;
+        draft.loadUserDone = false; // 초기화
+        break;
+      case LOAD_USER_SUCCESS:
+        draft.loadUserLoading = false;
+        draft.loadUserDone = true;
+        draft.me = action.data; 
+        // 새로고침 시 
+        // 로그인 상태: 아까 if(req.user) 에서 user 정보를 받고 action.data 로 넘어옴, 이를 me 객체로 넣음
+        // 로그아웃 상태: else 에서 null 을 data 받음, 이를 me 객체로 넣음
+        break;
+      case LOAD_USER_FAILURE:
+        draft.loadUserLoading = false;
+        draft.loadUserError = action.error;
+        break;
+
       // 로그인 액션 처리 --------------------------
       case LOG_IN_REQUEST:
         draft.logInLoading = true;

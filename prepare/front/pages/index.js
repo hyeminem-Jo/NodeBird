@@ -4,15 +4,21 @@ import AppLayout from "../components/AppLayout";
 import PostForm from "../components/PostForm";
 import PostCard from "../components/PostCard";
 import { LOAD_POSTS_REQUEST } from "../reducers/post";
+import { LOAD_USER_REQUEST } from "../reducers/user";
 
 const Home = () => {
   const dispatch = useDispatch();
   const { me } = useSelector((state) => state.user);
   const { mainPosts, hasMorePosts, loadPostsLoading } = useSelector((state) => state.post);
 
+  // 동시에 게시글들, 사용자 정보 불러오기
   // 처음 메인 페이지를 불러올 때, 즉 첫 렌더링 때 dummyPost 들이 차게 한다.
   // 첫 렌더링 때만 실행되도록 하는 componentDidMount 를 구현 => [] 를 비워줌
   useEffect(() => {
+    // 새로고침 시 항상 유저 로그인 정보 유지하기 (첫 렌더링: 새로고침)
+    dispatch({
+      type: LOAD_USER_REQUEST,
+    })
     dispatch({
       type: LOAD_POSTS_REQUEST,
     });
