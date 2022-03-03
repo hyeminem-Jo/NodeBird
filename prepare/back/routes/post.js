@@ -5,9 +5,11 @@ const { isLoggedIn } = require('./middlewares');
 
 const router = express.Router();
 
+// ** 게시글 추가하기 라우터
 // app >> router 변경
 router.post('/', isLoggedIn, async (req, res, next) => { // POST /post
   try {
+    // Post 테이블에 Row(행) 데이터 추가
     const post = await Post.create({ // req.body = { content: 'text~' }
       content: req.body.content,
       UserId: req.user.id,
@@ -26,17 +28,22 @@ router.post('/', isLoggedIn, async (req, res, next) => { // POST /post
           model: Image, // 이미지
         },
         {
-          model: Comment, // 댓글을 포함시킬 때 항상 댓글 작성자도 포함
+          model: Comment, // 댓글
           include: [
             {
-              model: User,
+              model: User, // 댓글을 포함시킬 때 항상 댓글 작성자도 포함
               attributes: ['id', 'nickname'],
-            }
+            },
           ]
         },
         {
           model: User, // 게시글 작성자
           attributes: ['id', 'nickname'], // 비밀번호 제외
+        },
+        {
+          model: User, // 게시글에 좋아요 누른 사람
+          as: 'Likers', // Like[] 테이블
+          attributes: ['id'], // 비밀번호 제외
         },
       ]
     })
@@ -47,6 +54,7 @@ router.post('/', isLoggedIn, async (req, res, next) => { // POST /post
   }
 })
 
+// ** 댓글 추가하기 라우터
 // 파라미터: 주소 부분에서 동적으로 바뀌는 부분
 // '/1/comment'
 // ex) 항상 1번 게시글이 아닌 6번 게시글(/6/comment) 일 수도 있다
@@ -54,22 +62,24 @@ router.post('/', isLoggedIn, async (req, res, next) => { // POST /post
 router.post('/:postId/comment', isLoggedIn, async (req, res, next) => { 
   // POST /post/1/comment
   try {
-    // 부가적인, 세부적인 설정 (optional)
-    // 존재하지 않는 게시글에 댓글을 달 우려 (혹시나)
-    // 혹은 다른 게시글 주소에 접근해서 댓글을 추가 삭제할 우려
     // 조건: 게시글이 존재한다면
     const post = await Post.findOne({
       where: { id: req.params.postId }
     });
-    if (!post) {
+    // 부가적인, 세부적인 설정 (optional)
+    // 존재하지 않는 게시글에 댓글을 달 우려 (혹시나)
+    // 혹은 다른 게시글 주소에 접근해서 댓글을 추가 삭제할 우려
+    if (!post) { // 조건: 게시글이 존재하지 않는 다면
       return res.status(403).send('존재하지 않는 게시글입니다.');
       // return 을 붙여줘야 send 가 두 번 발송되지 않음
       // ** 무조건 요청 한번에 응답 한번!!
+      // 없는 게시글엔 댓글 못담
     }
 
     const comment = await Comment.create({ 
       content: req.body.content,
       PostId: parseInt(req.params.postId, 10), 
+      // 조회할 때 말고 적용할 때만 params 를 parseInt() 
       // :postId 가 params 를 통해 접근
       // req.params => 문자열일 것이다. 이렇게 하면 PostId 에 문자열이 들어가 에러가 발생한다. 숫자로 바꿔주자
       // parseInt(string, radix)
@@ -94,10 +104,80 @@ router.post('/:postId/comment', isLoggedIn, async (req, res, next) => {
   }
 })
 
-router.delete('/', (req, res) => { // DELETE /post
-  res.json({ id: 1 })
+// ** 게시글에 좋아요 달기 라우터
+router.patch('/:postId/like', isLoggedIn, async (req, res, next) => { 
+  // saga 에서 data(post.id = 게시글 id) 를 받아 req.params 를 통해 접근
+  try {
+    const post = await Post.findOne({ 
+      where: { id: req.params.postId }
+      // 조회할 때 말고 적용할 때만 params 를 parseInt() 
+    })
+    if (!post) {
+      return res.status(403).send('게시글이 존재하지 않습니다.');
+      // 게시글이 없으면 좋아요도 못누름
+    }
+    await post.addLikers(req.user.id); // 로그인된 사용자의 id
+    // 데이터로 받은 PostId 로 post 를 찾고 그 post 의 Likers 테이블에 로그인된 사용자의 id 추가
+    // Like 테이블의 PostId 와 UserId 에 
+    // [게시글에 좋아요 누른 유저의 id], [유저가 누른 게시글의 id] 추가됨
+    // 관계 메서드: 테이블간의 관계를 이용 (models 참고) 
+    res.json({ PostId: post.id, UserId: req.user.id });
+    // 어떤 사용자가 어디 게시글에 좋아요 눌렀는지 프론트에 보냄
+    // 로그인 이후로는 항상 라우터 접근 전 deserealizeUser 에 들러 쿠키의 id 를 통해 복구된 사용자 정보(user) 를 req.user 에 담음
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+})
+
+// ** 게시글에 좋아요 취소하기 라우터
+router.delete('/:postId/like', isLoggedIn, async (req, res, next) => {
+  try {
+    const post = await Post.findOne({ 
+      where: { id: req.params.postId }
+      // 조회할 때 말고 적용할 때만 params 를 parseInt() 
+    })
+    if (!post) {
+      return res.status(403).send('게시글이 존재하지 않습니다.')
+      // 게시글이 없으면 좋아요 취소도 못함
+    }
+    await post.removeLikers(req.user.id); 
+    res.json({ PostId: post.id, UserId: req.user.id });
+    // 어떤 사용자가 어디 게시글에 좋아요를 취소했는지 프론트에 보냄
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+})
+
+// ** 게시글 삭제하기 라우터
+router.delete('/:postId', isLoggedIn, async (req, res, next) => { // DELETE /post/1
+  // 어떤 게시글을 삭제할 지 표시 (${data}) => 주소로 받기
+  try {
+    await Post.destroy({ // 제거 
+      where: {
+        id: req.params.postId,
+        UserId: req.user.id, // 지우려는 게시글의 작성자가 본인인지 확인
+        // postId 만 바꾸어 주소로 접근하면, 다른 사람이 자신의 게시글을 삭제하는 경우도 생길 위험이 있다 => 본인 확인 필요
+      },
+      // 선택된 id 를 가진 데이터 제거
+    });
+    res.status(200).json({ PostId: parseInt(req.params.postId, 10) }); 
+    // 삭제된 게시물 id 프론트에 전달
+    // params 는 문자열
+    // 조회할 때 말고 적용할 때만 params 를 parseInt() 
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
 })
 
 // 중복을 막음
 
 module.exports = router;
+
+// 시퀄라이즈 메서드
+// findOne(), findAll(): 조회
+// create(): 생성
+// destroy(): 삭제
+// update(): 수정

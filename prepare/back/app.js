@@ -13,6 +13,7 @@ const postRouter = require('./routes/post');
 const postsRouter = require('./routes/posts');
 const userRouter = require('./routes/user');
 const db = require('./models'); // sequelize 가 들어잇는 db
+// db 를 조작할 땐 항상 await 을 써준다.
 const passportConfig = require('./passport');
 
 dotenv.config();

@@ -18,8 +18,65 @@ import {
   LOAD_POSTS_REQUEST,
   LOAD_POSTS_SUCCESS,
   LOAD_POSTS_FAILURE,
+  LIKE_POST_REQUEST,
+  UNLIKE_POST_REQUEST,
+  LIKE_POST_SUCCESS,
+  LIKE_POST_FAILURE,
+  UNLIKE_POST_SUCCESS,
+  UNLIKE_POST_FAILURE,
   // generateDummyPost,
 } from "../reducers/post";
+
+// likePost --------------
+// 좋아요: 게시글의 일부분을 수정 - patch(부분 수정)
+function likePostAPI(data) {
+  return axios.patch(`/post/${data}/like`); // /post/1/like
+  // data 가 주소에 이미 들어있기 때문에 따로 ,data 를 또 넣을 필요 x
+  // data 는 post.id (PostCard 컴포넌트에서)
+  // => 라우터 주소에 어디 게시글에 좋아요를 눌렀는지 표시
+}
+
+function* likePost(action) {
+  try {
+    const result = yield call(likePostAPI, action.data)
+    yield put({
+      type: LIKE_POST_SUCCESS,
+      data: result.data, // { PostId, UserId }
+      // 어떤 사용자가 어디 게시글에 좋아요 눌렀는지
+    });
+  } catch (err) {
+    console.error(err);
+    yield put({
+      type: LIKE_POST_FAILURE,
+      data: err.response.data,
+    });
+  }
+}
+
+// unlikePost --------------
+// 좋아요 취소: 게시글의 일부분을 수정 - patch(부분 수정)
+function unlikePostAPI(data) {
+  return axios.delete(`/post/${data}/like`); // /post/1/like
+  // return axios.patch(`/post/${data}/unlike`);
+  // data 가 주소에 이미 들어있기 때문에 따로 ,data 를 또 넣을 필요 x
+}
+
+function* unlikePost(action) {
+  try {
+    const result = yield call(unlikePostAPI, action.data)
+    yield put({
+      type: UNLIKE_POST_SUCCESS,
+      data: result.data, // { PostId, UserId }
+      // 어떤 사용자가 어디 게시글에 좋아요 눌렀는지
+    });
+  } catch (err) {
+    console.error(err);
+    yield put({
+      type: UNLIKE_POST_FAILURE,
+      data: err.response.data,
+    });
+  }
+}
 
 // loadPosts --------------
 // 서버에서 게시글들 불러오는 요청(게시글 조회, get)
@@ -35,6 +92,7 @@ function* loadPosts(action) {
       data: result.data, // 게시글들 배열 [{}, {}, {}...]
     });
   } catch (err) {
+    console.error(err);
     yield put({
       type: LOAD_POSTS_FAILURE,
       data: err.response.data,
@@ -77,6 +135,7 @@ function* addPost(action) {
       data: result.data.id, // model 객체에서 id 는 자동으로 생성됨
     });
   } catch (err) {
+    console.error(err);
     yield put({
       type: ADD_POST_FAILURE,
       data: err.response.data,
@@ -86,22 +145,23 @@ function* addPost(action) {
 
 // removePost --------------
 function removePostAPI(data) {
-  return axios.delete("/api/post", data);
+  return axios.delete(`/post/${data}`); // delete 는 data 넣지 x
 }
 
 function* removePost(action) {
   try {
-    yield delay(1000);
+    const result = yield call(removePostAPI, action.data);
     yield put({
       type: REMOVE_POST_SUCCESS,
-      data: action.data // 삭제 게시글 id 
+      data: result.data // 삭제 게시글 id (PostId)
     });
     // from user reducer
     yield put({ // 게시글 수 변경 (user action)
       type: REMOVE_POST_OF_ME,
-      data: action.data, // 삭제 게시글 id
+      data: action.data, // 삭제 게시글 id (PostId)
     });
   } catch (err) {
+    console.error(err);
     yield put({
       type: REMOVE_POST_FAILURE,
       data: err.response.data,
@@ -133,6 +193,15 @@ function* addComment(action) {
   }
 }
 
+
+function* watchLikePost() {
+  yield takeLatest(LIKE_POST_REQUEST, likePost);
+}
+
+function* watchUnlikePost() {
+  yield takeLatest(UNLIKE_POST_REQUEST, unlikePost);
+}
+
 function* watchLoadPost() {
   // yield takeLatest(LOAD_POSTS_REQUEST, loadPosts);
   yield throttle(5000, LOAD_POSTS_REQUEST, loadPosts);
@@ -152,6 +221,8 @@ function* watchAddComment() {
 
 export default function* postSaga() {
   yield all([
+    fork(watchLikePost), 
+    fork(watchUnlikePost), 
     fork(watchLoadPost), 
     fork(watchAddPost), 
     fork(watchRemovePost), 

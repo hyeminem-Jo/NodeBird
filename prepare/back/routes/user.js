@@ -10,7 +10,8 @@ const db = require('../models');
 const router = express.Router();
 // CRUD에서 조회는 GET, 등록은 POST, 수정은 PUT, 삭제는 DELETE
 
-// 새로고침 시 매번 사용자 정보 복구 (새로고침해도 브라우저에 쿠키가 남아있어 쿠키를 서버에 보냄)
+// ** 새로고침 시 매번 사용자 정보 복구 
+// (새로고침해도 브라우저에 쿠키가 남아있어 쿠키를 서버에 보냄)
 // 로그인 상태에서 새로고침 시 항상 브라우저에서 요청을 하고 쿠키 id 로 서버에서 사용자 정보 복구 후 브라우저로 보냄 => 서버에서 로그인 되었는지 조회 (GET)
 // => 하지만 사용자가 항상 로그인 상태인 것이 아닌 로그아웃인 상태도 있을 것이고, 로그아웃인 상태에서도 새로고침하면 로그인 요청이 될 수도 있다. 이 경우 req.user.id 에서 에러가남
 // => 이유: deserealizeUser 는 로그인 이후로만 실행하고, 로그인 상태가 아니라면 req.user 가 존재 x
@@ -55,6 +56,7 @@ router.get('/', async (req, res, next) => { // GET /user/
   }
 })
 
+// ** 로그인
 // local 에서 만든 passport 전략을 user/login 부분에 실행
 // done 은 콜백의 개념이라 세개의 인자가 다음의 passport.authenticate('local', ) 의 두번째 인자로 전달됨 
 // => done(null, false, { reason: '존재하지 않는 이메일입니다!' })
@@ -132,8 +134,9 @@ router.post('/login', isNotLoggedIn,(req, res, next) => { // 미들웨어 확장
   })(req, res, next);
 }) // POST /user/login
 
+// ** 회원가입
 // app.js 에 있는 "/user" 와 "/" 가 합쳐짐
-router.post('/', isNotLoggedIn,async (req, res, next) => { // POST /user/
+router.post('/', isNotLoggedIn, async (req, res, next) => { // POST /user/
   // isNotLoggedIn: 로그인 안한 사람이 회원가입 접근 가능
   try {
     // email 이 겹치는 유저가 있으면 exUser 에 저장
@@ -168,12 +171,31 @@ router.post('/', isNotLoggedIn,async (req, res, next) => { // POST /user/
   }
 });
 
+// ** 로그아웃
 router.post('/logout', isLoggedIn, (req, res) => { // 세션, 쿠키 지우면 끝
   // isNotLoggedIn: 로그인 한 사람이 로그아웃 접근 가능
   // router.post('/user/logout', (req, res) => { // 세션, 쿠키 지우면 끝
   req.logout();
   req.session.destroy(); // 저장된 쿠키, id 제거
   res.send('ok') // 로그아웃 성공
+})
+
+// ** 닉네임 수정 (patch)
+router.patch('/nickname', isLoggedIn, async (req, res, next) => {
+  try {
+    await User.update( // id 가 본인인 nickname 을 수정
+      {
+        nickname: req.body.nickname, // 본인 id 의 닉네임을 front 로부터 받은 닉네임으로 수정
+      },
+      {
+        where: { id: req.user.id }, //  남의 nickname 수정 x
+      }
+    );
+    res.status(200).json({ nickname: req.body.nickname }); // 수정된 닉네임 다시 전달
+  } catch (error) {
+    console.error(error);
+    next();
+  }
 })
 
 module.exports = router;

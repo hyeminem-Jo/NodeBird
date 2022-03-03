@@ -23,8 +23,13 @@ router.get("/", async (req, res, next) => { // GET /posts/
       // 이차원 배열인 이유: 여러 기준으로 정렬 가능
       include: [
         {
-          model: User, // 작성자 정보
+          model: User, // 게시글 작성자 
           attributes: ['id', 'nickname'], // 사용자 비밀번호 빼고 가져옴
+        },
+        {
+          model: User, // 게시글에 좋아요 누른 사람
+          as: 'Likers', // Like 테이블에 소속된 User
+          attributes: ['id'], // 사용자 비밀번호 빼고 가져옴
         },
         {
           model: Image, // 이미지 정보
@@ -34,6 +39,7 @@ router.get("/", async (req, res, next) => { // GET /posts/
           include: [{
             model: User, // 댓글 작성자
             attributes: ['id', 'nickname'], // 사용자 비밀번호 빼고 가져옴
+            // order: [['createdAt', 'DESC']],
           }]
         },
       ]

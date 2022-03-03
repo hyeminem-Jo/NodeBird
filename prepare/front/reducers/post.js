@@ -6,19 +6,33 @@ export const initialState = {
   mainPosts: [], // 실제로는 이렇게 비어있는 채로 서버에서 받는다. 
   imagePaths: [], // 게시글에 이미지를 업로드 할 때, 이미지의 경로들이 저장되는 공간
 
+  // 좋아요
+  likePostLoading: false,
+  likePostDone: false,
+  likePostError: null,
+
+  // 좋아요 취소
+  unlikePostLoading: false,
+  unlikePostDone: false,
+  unlikePostError: null,
+
+  // 게시물들 로드
   hasMorePosts: true, // 처음 데이터는 무조건 가져와야함 (초반에는 반드시 게시물이 떠야하므로)
   loadPostsLoading: false,
   loadPostsDone: false,
   loadPostsError: null,
 
+  // 게시물 추가
   addPostLoading: false,
   addPostDone: false,
   addPostError: null,
 
+  // 게시물 삭제
   removePostLoading: false,
   removePostDone: false,
   removePostError: null,
 
+  // 댓글 추가
   addCommentLoading: false,
   addCommentDone: false,
   addCommentError: null,
@@ -26,6 +40,14 @@ export const initialState = {
 
 // initialState.mainPosts = initialState.mainPosts.concat(generateDummyPost(10))
 // 강좌에선 해당 코드 없애라 함 맞을까?
+
+export const LIKE_POST_REQUEST = "LIKE_POST_REQUEST";
+export const LIKE_POST_SUCCESS = "LIKE_POST_SUCCESS";
+export const LIKE_POST_FAILURE = "LIKE_POST_FAILURE";
+
+export const UNLIKE_POST_REQUEST = "UNLIKE_POST_REQUEST";
+export const UNLIKE_POST_SUCCESS = "UNLIKE_POST_SUCCESS";
+export const UNLIKE_POST_FAILURE = "UNLIKE_POST_FAILURE";
 
 export const LOAD_POSTS_REQUEST = "LOAD_POSTS_REQUEST";
 export const LOAD_POSTS_SUCCESS = "LOAD_POSTS_SUCCESS";
@@ -61,6 +83,46 @@ const reducer = (state = initialState, action) => {
   // state 대신 draft 가 자리함
   return produce(state, (draft) => {
     switch (action.type) {
+
+      // 좋아요 액션 처리 --------------------------
+      case LIKE_POST_REQUEST:
+        draft.likePostLoading = true;
+        draft.likePostDone = false;
+        draft.likePostError = null;
+        break;
+      case LIKE_POST_SUCCESS: {
+        // action.data = { PostId, UserId } 좋아요 누른 게시글 id 로 게시글 찾기
+        const post =  draft.mainPosts.find((v) => v.id === action.data.PostId);
+        // 해당 게시글 post 의 Likers[] 에 좋아요 누른 유저 id 삽입
+        post.Likers.push({ id: action.data.UserId }); 
+        draft.likePostLoading = false;
+        draft.likePostDone = true;
+        break;
+      }
+      case LIKE_POST_FAILURE:
+        draft.likePostLoading = false;
+        draft.likePostError = action.error;
+        break;
+
+      // 좋아요 취소 액션 처리 --------------------------
+      case UNLIKE_POST_REQUEST:
+        draft.unlikePostLoading = true;
+        draft.unlikePostDone = false;
+        draft.unlikePostError = null;
+        break;
+      case UNLIKE_POST_SUCCESS: {
+        // action.data = { PostId, UserId }
+        const post = draft.mainPosts.find((v) => v.id === action.data.PostId);
+        post.Likers = post.Likers.filter((v) => v.id !== action.data.UserId);
+        // 원래 의미상으론 filter() 가 아닌 splice() 를 쓰는 것이 맞음
+        draft.unlikePostLoading = false;
+        draft.unlikePostDone = true;
+        break;
+      }
+      case UNLIKE_POST_FAILURE:
+        draft.unlikePostLoading = false;
+        draft.unlikePostError = action.error;
+        break;
 
       // 처음 메인화면에 게시글들 삽입 액션 처리 --------------------------
       case LOAD_POSTS_REQUEST:
@@ -109,25 +171,25 @@ const reducer = (state = initialState, action) => {
         draft.addPostError = action.error;
         break;
 
-        // 게시글 삭제 액션 처리 --------------------------
+      // 게시글 삭제 액션 처리 --------------------------
       case REMOVE_POST_REQUEST:
         draft.removePostLoading = true;
         draft.removePostDone = false;
         draft.removePostError = null;
         break;
-      case REMOVE_POST_SUCCESS:
-        // 불변성을 지키며 지우는 방법은 filter() 
-        draft.mainPosts = draft.mainPosts.filter((v) => v.id !== action.data);
-        // draft.mainPosts = state.mainPosts.filter((v) => v.id !== action.data);
+      case REMOVE_POST_SUCCESS: 
         draft.removePostLoading = false;
         draft.removePostDone = true;
+        // 불변성을 지키며 지우는 방법은 filter() 
+        draft.mainPosts = draft.mainPosts.filter((v) => v.id !== action.data.PostId);
+        // draft.mainPosts = state.mainPosts.filter((v) => v.id !== action.data);
         break;
       case REMOVE_POST_FAILURE:
         draft.removePostLoading = false;
         draft.removePostError = action.error;
         break;
 
-        // 댓글 작성 액션 처리 --------------------------
+      // 댓글 작성 액션 처리 --------------------------
       case ADD_COMMENT_REQUEST:
         draft.addCommentLoading = true;
         draft.addCommentDone = false;

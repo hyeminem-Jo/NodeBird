@@ -8,7 +8,7 @@ import CommentForm from "./CommentForm";
 import PostImages from "./PostImages";
 import PostCardContent from "./PostCardContent";
 import FollowButton from "./FollowButton";
-import { REMOVE_POST_REQUEST } from "../reducers/post";
+import { LIKE_POST_REQUEST, REMOVE_POST_REQUEST, UNLIKE_POST_REQUEST } from "../reducers/post";
 
 // antd 기능: Card 컴포넌트 기능 cover
 // post 에 Images 가 하나 라도 있다면 이미지 표현
@@ -17,22 +17,26 @@ const PostCard = ({ post }) => {
   
   const dispatch = useDispatch();
   const { removePostLoading } = useSelector((state) => state.post);
-  const { me } = useSelector((state) => state.user);
-  const id = me && me.id // 만약 id 가 있는 상태(로그인 상태)면 me 와 me.id 가 있음
+  // const { me } = useSelector((state) => state.user);
+  // const id = me && me.id // 만약 id 가 있는 상태(로그인 상태)면 me 와 me.id 가 있음
   // 줄인 문법: me?.id (optional chaining)
   // me 가 me.id 에 접근하기 전,에 me 자신이 undefined 나 null 이 아닌지 검증한다.
   // => me 가 존재하면 me.id 를 id 에 들어가고 그것이 없으면 undefined
   // 한 번에 쓰는 법:
-  // const id = useSelector((state) => state.user.me?.id);
-  
-  const [liked, setLiked] = useState(false);
   const [commentFormOpened, setCommentFormOpened] = useState(false);
 
-  const onToggleLike = useCallback(() => {
-    // 토글 기능의 경우
-    // 이전 값의 반대 값을 반환
-    setLiked((prev) => !prev);
-    // 항상 false 는 true 로, true 는 false 로 바뀜
+  const onLike = useCallback(() => {
+    dispatch({
+      type: LIKE_POST_REQUEST,
+      data: post.id,
+    })
+  }, [])
+
+  const onUnLike = useCallback(() => {
+    dispatch({
+      type: UNLIKE_POST_REQUEST,
+      data: post.id,
+    })
   }, [])
 
   const onToggleComment = useCallback(() => {
@@ -45,6 +49,11 @@ const PostCard = ({ post }) => {
       data: post.id,
     })
   }, [])
+
+  // 로그인 한 유저의 id
+  const id = useSelector((state) => state.user.me?.id);
+  // 게시글의 [좋아요 누른 사람들 리스트] 중에 로그인한 유저(me)의 id 가 있는지
+  const liked = post.Likers.find((v) => v.id === id)
   
   return (
     <div style={{ marginBottom: 20 }}>
@@ -54,9 +63,9 @@ const PostCard = ({ post }) => {
         // 배열 안에 컴포넌트를 넣을 때 반드시 key 를 넣어주어야 한다.
         actions={[
           <RetweetOutlined key="retweet" />,
-          liked 
-            ? <HeartTwoTone twoToneColor="crimson" key="heart" onClick={onToggleLike} /> 
-            : <HeartOutlined key="heart" onClick={onToggleLike}  />,
+          liked  // 해당 post.Likers 에 있는 요소(UserId)들 중 로그인 한 유저(me)의 id 가 있다면 true 없으면 false
+            ? <HeartTwoTone twoToneColor="crimson" key="heart" onClick={onUnLike} /> 
+            : <HeartOutlined key="heart" onClick={onLike}  />,
           <MessageOutlined key="comment" onClick={onToggleComment} />,
           <Popover key="more" content={(
             <Button.Group>
@@ -124,7 +133,8 @@ PostCard.propTypes = {
     content: PropTypes.string,
     createdAt: PropTypes.string,
     Comments: PropTypes.arrayOf(PropTypes.object), // 객체들의 배열
-    Images: PropTypes.arrayOf(PropTypes.object)
+    Images: PropTypes.arrayOf(PropTypes.object),
+    Likers: PropTypes.arrayOf(PropTypes.object),
   }).isRequired,
 }
 
