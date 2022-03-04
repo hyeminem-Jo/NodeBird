@@ -1,13 +1,13 @@
 // sagas > user.js
 
 import axios from 'axios';
-import { all, fork, call, delay, takeLatest, put } from 'redux-saga/effects'
+import { all, fork, call, takeLatest, put } from 'redux-saga/effects'
 
 import { LOG_IN_REQUEST, LOG_IN_SUCCESS, LOG_IN_FAILURE, 
   LOG_OUT_REQUEST, LOG_OUT_SUCCESS, LOG_OUT_FAILURE,
   SIGN_UP_REQUEST, SIGN_UP_SUCCESS, SIGN_UP_FAILURE, 
   FOLLOW_REQUEST, UNFOLLOW_REQUEST, FOLLOW_SUCCESS, 
-  FOLLOW_FAILURE, UNFOLLOW_FAILURE, UNFOLLOW_SUCCESS, LOAD_USER_REQUEST, LOAD_USER_SUCCESS, LOAD_USER_FAILURE, CHANGE_NICKNAME_REQUEST, CHANGE_NICKNAME_SUCCESS, CHANGE_NICKNAME_FAILURE } from '../reducers/user';
+  FOLLOW_FAILURE, UNFOLLOW_FAILURE, UNFOLLOW_SUCCESS, LOAD_USER_REQUEST, LOAD_USER_SUCCESS, LOAD_USER_FAILURE, CHANGE_NICKNAME_REQUEST, CHANGE_NICKNAME_SUCCESS, CHANGE_NICKNAME_FAILURE, LOAD_FOLLOWERS_REQUEST, LOAD_FOLLOWINGS_REQUEST, LOAD_FOLLOWERS_SUCCESS, LOAD_FOLLOWERS_FAILURE, LOAD_FOLLOWINGS_SUCCESS, LOAD_FOLLOWINGS_FAILURE, REMOVE_FOLLOWER_REQUEST, REMOVE_FOLLOWER_SUCCESS, REMOVE_FOLLOWER_FAILURE } from '../reducers/user';
 
 // loadUser --------------
 function loadUserAPI() {
@@ -124,17 +124,16 @@ function* changeNickname(action) {
 }
 
 // follow --------------
-function followAPI() {
-  return axios.post('/api/follow');
+function followAPI(data) { // 팔로우할 사람 id
+  return axios.patch(`/user/${data}/follow`); // /user/1/follow
 }
 
-function* follow(action) {
+function* follow(action) { 
   try { 
-    yield delay(1000);
-    // const result = yield call(followAPI) 
+    const result = yield call(followAPI, action.data) // 팔로우할 사람 id
     yield put({ 
       type: FOLLOW_SUCCESS,
-      data: action.data,
+      data: result.data,
     })
   } catch (err) { 
     console.error(err);
@@ -145,18 +144,17 @@ function* follow(action) {
   }
 }
 
-// unfollow --------------
-function unfollowAPI() { 
-  return axios.post('/api/unfollow');
+// unfollow (removeFollowings) --------------
+function unfollowAPI(data) { // 내 팔로잉에서 제거할 유저 id
+  return axios.delete(`/user/${data}/follow`);
 }
 
 function* unfollow(action) {
   try { 
-    yield delay(1000);
-    // const result = yield call(unfollowAPI) 
+    const result = yield call(unfollowAPI, action.data) 
     yield put({ 
       type: UNFOLLOW_SUCCESS,
-      data: action.data,
+      data: result.data,
     })
   } catch (err) { 
     console.error(err);
@@ -167,6 +165,81 @@ function* unfollow(action) {
   }
 }
 
+// removeFollower --------------
+function removeFollowerAPI(data) { // 내 팔로워에서 제거할 유저 id
+  return axios.delete(`/user/follower/${data}`); 
+}
+
+function* removeFollower(action) {
+  try { 
+    const result = yield call(removeFollowerAPI, action.data) 
+    yield put({ 
+      type: REMOVE_FOLLOWER_SUCCESS,
+      data: result.data,
+    })
+  } catch (err) { 
+    console.error(err);
+    yield put({
+      type: REMOVE_FOLLOWER_FAILURE,
+      error: err.response.data,
+    })
+  }
+}
+
+// loadFollowers --------------
+function loadFollowersAPI(data) { // 팔로워 목록 불러오기
+  return axios.get('user/followers', data);
+}
+
+function* loadFollowers(action) {
+  try { 
+    const result = yield call(loadFollowersAPI, action.data) 
+    yield put({ 
+      type: LOAD_FOLLOWERS_SUCCESS,
+      data: result.data,
+    })
+  } catch (err) { 
+    console.error(err);
+    yield put({
+      type: LOAD_FOLLOWERS_FAILURE,
+      error: err.response.data,
+    })
+  }
+}
+
+// loadFollowings --------------
+function loadFollowingsAPI(data) { // 내 팔로잉에서 제거할 유저 id
+  return axios.get('user/followings', data);
+}
+
+function* loadFollowings(action) {
+  try { 
+    const result = yield call(loadFollowingsAPI, action.data) 
+    yield put({ 
+      type: LOAD_FOLLOWINGS_SUCCESS,
+      data: result.data,
+    })
+  } catch (err) { 
+    console.error(err);
+    yield put({
+      type: LOAD_FOLLOWINGS_FAILURE,
+      error: err.response.data,
+    })
+  }
+}
+
+
+function* watchRemoveFollowers() {
+  yield takeLatest(REMOVE_FOLLOWER_REQUEST, removeFollower); 
+}
+
+function* watchLoadFollowers() {
+  yield takeLatest(LOAD_FOLLOWERS_REQUEST, loadFollowers); 
+}
+
+function* watchLoadFollowings() {
+  yield takeLatest(LOAD_FOLLOWINGS_REQUEST, loadFollowings); 
+}
 
 function* watchChangeNickname() {
   yield takeLatest(CHANGE_NICKNAME_REQUEST, changeNickname); 
@@ -198,12 +271,15 @@ function* watchSignUp() {
 
 export default function* userSaga() {
   yield all([
+    fork(watchLoadFollowers),
+    fork(watchLoadFollowings),
     fork(watchChangeNickname),
     fork(watchLoadUser),
     fork(watchLogIn),
     fork(watchLogOut),
     fork(watchFollow),
     fork(watchUnfollow),
+    fork(watchRemoveFollowers),
     fork(watchSignUp),
   ])
 }

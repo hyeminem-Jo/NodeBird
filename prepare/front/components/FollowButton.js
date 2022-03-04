@@ -9,7 +9,7 @@ const FollowButton = ({ post }) => {
   const { me, followLoading, unfollowLoading } = useSelector((state) => state.user);
 
   // 팔로잉 여부, 내 팔로잉 목록에 해당 글을 쓴 유저의 id 가 없으면 팔로우 버튼이 뜨도록 하기
-  const isFollowing = me?.Followings.find((v) => v.id === post.User.id);
+  const isFollowing = me?.Followings.find((v) => v.id === post.User.id); // 실제 데이터로 하면 post.UserId 로 해도 되려나??
 
   const onClickFollow = useCallback(() => {
     // 내가 이 유저를 팔로잉하고 있으면 언팔로우 버튼이 뜰 것이고, 
@@ -17,7 +17,7 @@ const FollowButton = ({ post }) => {
     if (isFollowing) {
       dispatch({
         type: UNFOLLOW_REQUEST,
-        data: post.User.id,
+        data: post.User.id, // 게시글 작성자 정보
       })
     } else {
       dispatch({
@@ -26,6 +26,12 @@ const FollowButton = ({ post }) => {
       })
     }
   }, [isFollowing]);
+
+  // Unhandled Runtime Error 에러:
+  // hooks, 즉 useCallback 이런 것보다 아래에 위치해야한다.
+  if (post.User.id === me.id) {
+    return null; // return null 을 하면 아무것도 안보여진다.
+  }
 
   return (
     <div>

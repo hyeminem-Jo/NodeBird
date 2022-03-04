@@ -227,3 +227,23 @@ export default reducer;
 // 더미데이터 post 정보에 대한 객체 => 서버 개발자에게 데이터 속성을 어떤식으로 줄건지 미리 물어보면 좋음
 
 // id 나 content 는 게시글 자체의 속성이고 User, Images, Comments 등은 다른 정보들과 합쳐서 주기 때문에 대문자로 표기해준다.
+
+// 더미데이터 구성
+// post: {
+//   id: shortId.generate(),
+//   User: {
+//     id: shortId.generate(),
+//     nickname: faker.name.findName(),
+//   },
+//   content: faker.lorem.paragraph(),
+//   Images: [{
+//     src: faker.image.image(),
+//   }],
+//   Comments: [{
+//     User: {
+//       id: shortId.generate(),
+//       nickname: faker.name.findName(),
+//     },
+//     content: faker.lorem.sentence(),
+//   }],
+// };

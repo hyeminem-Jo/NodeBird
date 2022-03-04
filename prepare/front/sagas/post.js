@@ -159,6 +159,7 @@ function* removePost(action) {
     yield put({ // 게시글 수 변경 (user action)
       type: REMOVE_POST_OF_ME,
       data: action.data, // 삭제 게시글 id (PostId)
+      // result.data 가 아닌가??
     });
   } catch (err) {
     console.error(err);

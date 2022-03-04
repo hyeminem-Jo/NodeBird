@@ -8,7 +8,8 @@ const db = require('../models');
 // 구조분해 없이 그냥 db 로 불러오면 db.User 로 써야함요
 
 const router = express.Router();
-// CRUD에서 조회는 GET, 등록은 POST, 수정은 PUT, 삭제는 DELETE
+// CRUD에서 조회는 GET(기존에 있는 정보를 띄워주기 ex. 게시글, 로그인 프로필, 팔로우 목록 ...), 
+// 등록은 POST, 수정은 PUT, 삭제는 DELETE
 
 // ** 새로고침 시 매번 사용자 정보 복구 
 // (새로고침해도 브라우저에 쿠키가 남아있어 쿠키를 서버에 보냄)
@@ -180,7 +181,7 @@ router.post('/logout', isLoggedIn, (req, res) => { // 세션, 쿠키 지우면 �
   res.send('ok') // 로그아웃 성공
 })
 
-// ** 닉네임 수정 (patch)
+// ** 닉네임 수정
 router.patch('/nickname', isLoggedIn, async (req, res, next) => {
   try {
     await User.update( // id 가 본인인 nickname 을 수정
@@ -197,5 +198,98 @@ router.patch('/nickname', isLoggedIn, async (req, res, next) => {
     next();
   }
 })
+
+// ** 팔로우 PATCH/user/1/follow
+router.patch('/:userId/follow', isLoggedIn, async (req, res, next) => {
+  try {
+    // 실존 유저인지 검사 (없는 사람을 팔로잉 할 수 없으니 팔로잉 한 유저가 실존하는지 체크)
+    // * 조회할 때는 params 숫자로 안해도 됨
+    const user = await User.findOne({
+      where: { id: req.params.userId }  // 내가 팔로우 하려는 유저 id
+    }); 
+    if (!user) {
+      res.status(403).send('팔로우 실패, 존재하지 않는 계정입니다.');
+      // 403: 금지
+    }
+    // 팔로우 버튼을 누르면 내가 그 사람의 '팔로워' 가 되기 때문
+    await user.addFollowers(req.user.id); // 상대 팔로우리스트에 나의 id 추가
+    // front 에 내 팔로잉 리스트에 추가할 유저 id 전달 (내 프로필에서 팔로잉 +1 해야되기 때문)
+    res.status(200).json({ UserId: parseInt(req.params.userId, 10) }); // parsInt() 안해주납..?
+  } catch (error) {
+    console.error(error);
+    next();
+  }
+})
+
+// ** 팔로우 취소 (팔로잉 제거) DELETE/user/1/follow
+router.delete('/:userId/follow', isLoggedIn, async (req, res, next) => {
+  try {
+    const user = await User.findOne({ where: { id: req.params.userId } });
+    if (!user) {
+      res.status(403).send('언팔로우 실패, 존재하지 않는 계정입니다.') // 실존 유저인지 검사 
+    }
+    await user.removeFollowers(req.user.id); // 상대 팔로우리스트에서 나의 id 제거
+    // front 에 내가 팔로잉 리스트에서 삭제할 유저 id 전달 (내 프로필에서 팔로잉 -1 해야되기 때문)
+    res.status(200).json({ UserId: parseInt(req.params.userId, 10) }); // parsInt() 안해주납..?
+  } catch (error) {
+    console.error(error);
+    next();
+  }
+})
+
+// ** 팔로워 제거 DELETE/user/follower/1
+router.delete('/follower/:userId', isLoggedIn, async (req, res, next) => {
+  try {
+    const user = await User.findOne(
+      { where: { id: req.params.userId }} // 제거할 팔로워 id
+    ); 
+    if (!user) { // 상대 계정이 실존하는지 검사
+      res.status(403).send('차단 실패, 존재하지 않는 계정입니다.');
+    }
+    await user.removeFollowings(req.user.id) // 상대(내 팔로워)의 팔로잉에서 '나'를 삭제
+    // 내가 그 사람을 차단하는 것 === 그 사람이 나를 팔로잉 끊는 것
+    res.status(200).json({ UserId: parseInt(req.params.userId, 10) })
+  } catch (error) {
+    console.error(error);
+    next();
+  }
+})
+
+// ** 팔로워 유저들 목록 불러오기 (세부 정보) GET/user/followers
+// 팔로잉, 팔로워 정보: Followers[], Followings[] 는 프로필에서 개수 표현만 하기 위해 DB 에서 attribute 를 통해 id 만 가지고 왔었다.
+// 팔로잉, 팔로워 리스트에서 그 유저들의 세부 정보를 가져와보서 표현하자
+router.get('/followers', isLoggedIn, async (req, res, next) => {
+  try {
+    const user = await User.findOne({
+      where: { id: req.user.id }  // '나' 를 먼저 찾고 거기서 getFollowers 로 Followers 를 찾음
+    }); 
+    if (!user) {
+      res.status(403).send('팔로워 목록 불러오기 실패, 존재하지 않는 계정입니다.') // 실존 유저인지 검사 
+    }
+    const followers = await user.getFollowers();
+    res.status(200).json(followers); 
+  } catch (error) {
+    console.error(error);
+    next();
+  }
+})
+
+// ** 팔로잉 유저들 목록 불러오기 (세부 정보) GET/user/followings
+router.get('/followings', isLoggedIn, async (req, res, next) => {
+  try {
+    const user = await User.findOne({
+      where: { id: req.user.id }  // '나' 를 먼저 찾고 거기서 getFollowers 로 Followers 를 찾음
+    }); 
+    if (!user) {
+      res.status(403).send('팔로잉 목록 불러오기 실패, 존재하지 않는 계정입니다.') // 실존 유저인지 검사 
+    }
+    const followings = await user.getFollowings();
+    res.status(200).json(followings); 
+  } catch (error) {
+    console.error(error);
+    next();
+  }
+})
+
 
 module.exports = router;

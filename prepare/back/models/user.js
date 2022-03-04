@@ -39,15 +39,22 @@ module.exports = (sequelize, DataTypes) => {
     // 팔로잉하는 사람은 다수의 팔로워들을 가질 수 있고, 팔로워들은 다수를 팔로잉 할 수 있다.
     // 찾을 때 반대로 찾아야됨 :
     // ex) 한 유저의 팔로워를 찾고 싶다면, 그 "팔로잉" 당하는 유저가 누구인지 부터 찾아야 한다.
+    // 제로의 '팔로잉 리스트'를 보고 싶다면, '팔로워' 입장인 제로의 id 로 찾아야함
+    // 팔로잉(갑)  팔로워
+    // 이영지   <  제로
+    // 아이유   <  제로  
+    // 장동건   <  제로
     db.User.belongsToMany(db.User, {
       through: "Follow",
-      as: "Followers",
-      foreignKey: "FollowingId",
+      as: "Followers", // addFollowers()
+      foreignKey: "FollowingId", 
+      // 팔로워 리스트 key: 나를 '팔로잉' 하고 있는 사람들
     });
     db.User.belongsToMany(db.User, {
       through: "Follow",
       as: "Followings",
       foreignKey: "FollowerId",
+      // 팔로잉 리스트 key: 내가 '팔로잉' 하는 사람들
     });
   };
   return User;
