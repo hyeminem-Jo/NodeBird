@@ -13,7 +13,8 @@ const Profile = () => {
 
   // 프로필 페이지 profile.js
   useEffect(() => {
-    dispatch({
+    // 메인페이지가 아닌 다른 페이지에서도 새로고침 할 때 로그인 정보를 가져와야 로그인인 상태의 프로필이 유지된다.
+    dispatch({ 
       type: LOAD_USER_REQUEST,
     })
     dispatch({

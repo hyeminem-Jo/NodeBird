@@ -161,6 +161,7 @@ const reducer = (state = initialState, action) => {
         draft.loadFollowersLoading = false;
         draft.loadFollowersDone = true;
         draft.me.Followers = action.data; 
+        // action.data = [ {id: 12, nickname: jinny ...}, {}, ... ]
         break;
       case LOAD_FOLLOWERS_FAILURE:
         draft.loadFollowersLoading = false;
@@ -177,6 +178,7 @@ const reducer = (state = initialState, action) => {
         draft.loadFollowingsLoading = false;
         draft.loadFollowingsDone = true;
         draft.me.Followings = action.data; 
+        // action.data = [ {id: 12, nickname: jinny ...}, {}, ... ]  
         break;
       case LOAD_FOLLOWINGS_FAILURE:
         draft.loadFollowingsLoading = false;

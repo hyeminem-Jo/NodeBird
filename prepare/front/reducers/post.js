@@ -6,6 +6,16 @@ export const initialState = {
   mainPosts: [], // 실제로는 이렇게 비어있는 채로 서버에서 받는다. 
   imagePaths: [], // 게시글에 이미지를 업로드 할 때, 이미지의 경로들이 저장되는 공간
 
+  // 이미지 업로드
+  retweetLoading: false, // 시도중
+  retweetDone: false,
+  retweetError: null,
+
+  // 이미지 업로드
+  uploadImagesLoading: false, // 시도중
+  uploadImagesDone: false,
+  uploadImagesError: null,
+
   // 좋아요
   likePostLoading: false,
   likePostDone: false,
@@ -40,6 +50,20 @@ export const initialState = {
 
 // initialState.mainPosts = initialState.mainPosts.concat(generateDummyPost(10))
 // 강좌에선 해당 코드 없애라 함 맞을까?
+
+// 업로드 전 이미지 제거(업로드 전이기 때문에 비동기가 아닌 동기여서 액션이 하나)
+// 이유: 서버쪽에서는 이미 받은 이미지를 굳이 제거하지 않고 저장해둠 (머신러닝, 소지하는 것이 더 유리)
+// 서버에서 지우고 싶다면 REQUEST, SUCCESS, AILURE 를 사용해서 비동기 작업으로 처리
+
+export const RETWEET_REQUEST = "RETWEET_REQUEST";
+export const RETWEET_SUCCESS = "RETWEET_SUCCESS";
+export const RETWEET_FAILURE = "RETWEET_FAILURE";
+
+export const REMOVE_IMAGE = "REMOVE_IMAGE";
+
+export const UPLOAD_IMAGES_REQUEST = "UPLOAD_IMAGES_REQUEST";
+export const UPLOAD_IMAGES_SUCCESS = "UPLOAD_IMAGES_SUCCESS";
+export const UPLOAD_IMAGES_FAILURE = "UPLOAD_IMAGES_FAILURE";
 
 export const LIKE_POST_REQUEST = "LIKE_POST_REQUEST";
 export const LIKE_POST_SUCCESS = "LIKE_POST_SUCCESS";
@@ -83,6 +107,51 @@ const reducer = (state = initialState, action) => {
   // state 대신 draft 가 자리함
   return produce(state, (draft) => {
     switch (action.type) {
+
+      // 리트윗 액션 처리 --------------------------
+      case RETWEET_REQUEST:
+        draft.retweetLoading = true;
+        draft.retweetDone = false;
+        draft.retweetError = null;
+        break;
+      case RETWEET_SUCCESS: { 
+        draft.retweetLoading = false;
+        draft.retweetDone = true;
+        draft.mainPosts.unshift(action.data); // 리트윗된 게시글 추가
+        break;
+      }
+      case RETWEET_FAILURE:
+        draft.retweetLoading = false;
+        draft.retweetError = action.error;
+        break;
+
+      // 업로드 전 이미지 제거(업로드 전이기 때문에 비동기가 아닌 동기여서 액션이 하나)
+      // 이유: 서버쪽에서는 이미 받은 이미지를 굳이 제거하지 않고 저장해둠 (머신러닝, 소지하는 것이 더 유리)
+      // 그래서 서버로 넘어간 이미지는 그대로 둔 채 프론트에서만 지움 (동기)
+      // 서버에서 지우고 싶다면 REQUEST, SUCCESS, AILURE 를 사용해서 비동기 작업으로 처리
+      case REMOVE_IMAGE: // action.data = index
+        draft.imagePaths = draft.imagePaths.filter((v, i) => i !== action.data);
+      break
+
+      // 이미지 업로드 액션 처리 --------------------------
+      case UPLOAD_IMAGES_REQUEST:
+        draft.uploadImagesLoading = true;
+        draft.uploadImagesDone = false;
+        draft.uploadImagesError = null;
+        break;
+      case UPLOAD_IMAGES_SUCCESS: { 
+        // action.data = 이미지 파일명(주소) 모음 
+        // [{ filename: 커플사진.jpg }, { filename: 히승이 엽사.png }, ...]
+        // 업로드 요청할 땐 form 데이터 그대로 보냈다가, 프론트로 다시 받을 땐 파일명만 받는건가...?
+        draft.imagePaths = action.data;
+        draft.uploadImagesLoading = false;
+        draft.uploadImagesDone = true;
+        break;
+      }
+      case UPLOAD_IMAGES_FAILURE:
+        draft.uploadImagesLoading = false;
+        draft.uploadImagesError = action.error;
+        break;
 
       // 좋아요 액션 처리 --------------------------
       case LIKE_POST_REQUEST:
@@ -140,7 +209,13 @@ const reducer = (state = initialState, action) => {
         // action.data 에 더미데이터들이 들어있을 것이고, 이것과 기존 데이터들과 합쳐준다.
         // => 가장 최근에 들어온 더미데이터가 앞에 위치하고, 그 뒤엔 기존 데이터가 위치하게 된다.
         
-        draft.hasMorePosts = draft.mainPosts.length < 50;
+        draft.hasMorePosts = action.data.length === 10; // 10 개 단위로 받고, 10개 이하일 때 false
+        // ex) 게시글이 98개 일 때, 게시글 수(action.data.length) 가 10개씩 9번 들어올 땐 hasMorePosts 가 계속 true 였다가 나머지 8개를 갖고올 땐 false 가 되므로 그 다음으로 게시글을 못가져오게 된다.
+        // 이 방법의 단점: 딱 떨어지게 10의 배수, 100개 일 때는 마지막 로드될 때 0이 들어오므로 0.length 가 되는 상황이 오는데 즉 그 다음 게시글이 있다고 판단하여 또 실행하는 경우가 생긴다. (한 번의 낭비 정도야...)
+        // => 이렇게 제약을 두지 않으면, 이미 로드되었던 끝의 게시글들이 자꾸 반복해서 중복 로드된다.
+        // ex. 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 (11 10 9 8 7 6 5 4 3 2 1...)
+
+        // draft.hasMorePosts = draft.mainPosts.length < 50;
         // hasMorePosts 가 true 인 상태에서는 게시물을 가져와달라는 뜻이고, 첫 렌더링 시 메인화면에는 당연히 게시물을 가져와야 하므로 초기엔 true 로 지정하고 그 후엔 지정된 게시물 수가 초과하면 false 로 한다.
         // mainPosts 의 갯수가 50개 일 때, 50개보다 작으면 hasMorePosts 가 true 이고, 50 개보다 많아지면 hasMorePosts 가 false 가 되므로 게시물 가져오는 시도를 멈춘다.
         // concat 으로 게시글 수가 50이 되어버리면 그 다음으로 hasMorePosts 가 false 가 됨
@@ -164,6 +239,8 @@ const reducer = (state = initialState, action) => {
         draft.mainPosts.unshift(action.data);
         // immer 활용한 코드: draft.mainPosts.unshift(dummyPost(action.data)) // 불변성 지킬 필요 x 
         // 이전 코드 => mainPosts: [dummyPost(action.data), ...state.mainPosts]; 
+        draft.imagePaths = []; 
+        // 미리보기로 보이던 이미지는 게시글로 진짜 사진이 업로드 되었을 때 안보이게 초기화
         break;
       case ADD_POST_FAILURE:
         draft.addPostLoading = false;

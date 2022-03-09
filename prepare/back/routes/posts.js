@@ -1,11 +1,30 @@
 const express = require("express");
+const { Op } = require("sequelize");
 const { Post, User, Image, Comment } = require("../models");
 
 const router = express.Router();
 
 router.get("/", async (req, res, next) => { // GET /posts/
   try {
+    const where = {}; // where 을 따로 뺌
+    // 이유: 초기 로딩일 때와 초기 로딩이 아닐 때 불러오는 조건이 다름
+    // 초기 로딩일 때: 그냥 최신글 10개 불러옴
+    // 초기 로딩이 아닐 때: 스크롤을 내려 더 불러오는 상황, lastId 다음 것을 불러와야함
+
+    // 쿼리스트링이라 lastId 가 req.query.lastId 에 담긴다.
+    // req.query.lastId 는 초기에 로딩할 땐 0 이며, 그것이 아니면 어떤 값이 있을 것
+    // 초기 로딩이 아닐 때 (0 은 falsy 한 값)
+    if (parseInt(req.query.lastId, 10)) {
+      where.id = { [Op.lt]: parseInt(req.query.lastId, 10) } 
+      // lastId(마지막 게시물) 보다 작은 id 들을 10개(limit: 10) 불러오기
+      // '보다 작은' 을 시퀄라이즈에서는 Op(operator) 를 씀
+    }
+    // 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 페이지일 때
+    // 21 번 게시글이 가장 최신 글, 오른쪽 순으로 오래된 게시글 순
+    // 마지막으로 게시된 것이 11번(lastId) 인 상태에서 다시 로드할 때, 11번(lastId)보다 작은 10번 이하 게시글들이 10개 불려야함
+
     const posts = await Post.findAll({
+      where,
     // 이전에 findOne() 에서는 하나의 id 를 특정하여 데이터 하나씩 꺼냈지만 findAll() 은 들어있는 데이터 전부 꺼냄
     // findOne() 의 경우, where: { UserId: 1 }, UserId 가 1번인 게시글을 전부 가져오기 처럼 하면 findAll() 과 똑같은 동작을 함
       // 하지만 게시글 전부를 가져오진 않고 로딩 될때마다 10개씩만 꺼내서 주기
@@ -42,6 +61,16 @@ router.get("/", async (req, res, next) => { // GET /posts/
             // order: [['createdAt', 'DESC']],
           }]
         },
+        { 
+          model: Post, // 원본 게시글
+          as: 'Retweet', // 리트윗 게시글 <-> 원본 게시글 관계테이블
+          include: [{
+            model: User, // 원본 게시글 작성자
+            attributes: ['id', 'nickname'],
+          }, {
+            model: Image,
+          }]
+        }, 
       ]
     });
     console.log(posts); // 라우터가 실행되었는지 서버쪽에 기록

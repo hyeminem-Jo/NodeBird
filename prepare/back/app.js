@@ -1,10 +1,11 @@
 const express = require('express'); 
 const cors = require('cors'); // 도메인 에러 위반 대응
-const session = require('express-session');
-const cookieParser = require('cookie-parser');
-const passport = require('passport');
+const session = require('express-session'); // 세션 관리용 미들웨어
+const cookieParser = require('cookie-parser'); // 요청된 쿠키를 쉽게 추출할 수 있도록 도와주는 미들웨어
+const passport = require('passport'); // 로그인 라이브러리
 const dotenv = require('dotenv'); // 패스워드 키 보안
 const morgan = require('morgan'); // 요청, 응답 표시
+const path = require('path');
 
 const postRouter = require('./routes/post');
 // posts 라우터를 따로 하나 더 만듬 (단수와 복수의 동작을 철저히 구분)
@@ -39,8 +40,19 @@ app.use(cors({
   credentials: true, // 쿠키도 같이 전달
   // credentials: 'false', // false 는 기본값
 }))
-app.use(express.json()); // front 에서 json 형태로 데이터를 보내줬을 때
-app.use(express.urlencoded({ extended: true })); // form submit 을 했을 때
+
+// 이미지 업로드 > PostCard.js 에서 이미지 경로 설정 후 uploads 폴더를 프론트에 제공할 수 있도록 설정
+// '/' 슬래시 경로는 localhost:3065/ 이다.
+// __dirname 는 현재(back) 폴더를 뜻하고, 그 안에 uploads 폴더를 합쳐준다.
+// __dirname + '/uploads' <= 이렇게 안하고 node 에서는 보통 path.join() 을 해준다.
+// => 이유: 맥, 윈도우 등 운영체제에 따라 경로 표시에 대한 차이가 있기 때문. path.join() 은 운영체제에 맞게 알아서 연결시켜준다.
+app.use('/', express.static(path.join(__dirname, 'uploads')));
+
+// front 로부터 받는 데이터 형태 (front -> back)
+app.use(express.json()); // json 형태로 데이터를 받을 때 (axios 로 보내질 때)
+app.use(express.urlencoded({ extended: true })); // form submit 으로 받을 때 (일반 form) 
+// (현재 multipart(파일, 이미지, 동영상) 로 받는 옵션은 없음)
+
 // 세션/쿠키 설정, 미들웨어들 삽입
 app.use(cookieParser(process.env.COOKIE_SECRET)); // 쿠키 만들 때 secret 사용
 app.use(session({

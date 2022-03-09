@@ -1,7 +1,7 @@
 // sagas > post.js
 
 import axios from "axios";
-import { all, fork, delay, put, takeLatest, throttle, call } from "redux-saga/effects";
+import { all, fork, put, takeLatest, throttle, call } from "redux-saga/effects";
 // import shortId from "shortid";
 
 import { ADD_POST_TO_ME, REMOVE_POST_OF_ME } from "../reducers/user";
@@ -24,6 +24,12 @@ import {
   LIKE_POST_FAILURE,
   UNLIKE_POST_SUCCESS,
   UNLIKE_POST_FAILURE,
+  UPLOAD_IMAGES_REQUEST,
+  UPLOAD_IMAGES_SUCCESS,
+  UPLOAD_IMAGES_FAILURE,
+  RETWEET_REQUEST,
+  RETWEET_SUCCESS,
+  RETWEET_FAILURE,
   // generateDummyPost,
 } from "../reducers/post";
 
@@ -48,7 +54,7 @@ function* likePost(action) {
     console.error(err);
     yield put({
       type: LIKE_POST_FAILURE,
-      data: err.response.data,
+      error: err.response.data,
     });
   }
 }
@@ -73,20 +79,26 @@ function* unlikePost(action) {
     console.error(err);
     yield put({
       type: UNLIKE_POST_FAILURE,
-      data: err.response.data,
+      error: err.response.data,
     });
   }
 }
 
 // loadPosts --------------
 // 서버에서 게시글들 불러오는 요청(게시글 조회, get)
-function loadPostsAPI(data) {
-  return axios.get("/posts", data);
+function loadPostsAPI(lastId) {
+  return axios.get(`/posts?lastId=${lastId || 0}`); 
+  // get 은 데이터를 넣지 못하므로 쿼리 스트링으로 넣어준다.
+  // get 으로 데이터를 보내려면 주소(/posts) + ? + key(lastId) = 값(lastId) 의 형태로 넣어주어야 한다.
+  // 쿼리 스트링: 위와 같은 key=value 형태로 &로 구분하여 넣어준다.
+  // => `/posts?lastId=${lastId}&limit=10&offset=10`
+  // get 의 장점: 주소에 데이터가 담겨있어 주소를 캐싱하면 그 데이터까지 캐싱됨 (patch 등은 x)
+  // lastId || 0 => 게시글이 0개 일 때 lastId 가 undefined 가 되면 0 으로 대체
 }
 
 function* loadPosts(action) {
   try {
-    const result = yield call(loadPostsAPI, action.data)
+    const result = yield call(loadPostsAPI, action.lastId)
     yield put({
       type: LOAD_POSTS_SUCCESS,
       data: result.data, // 게시글들 배열 [{}, {}, {}...]
@@ -95,30 +107,15 @@ function* loadPosts(action) {
     console.error(err);
     yield put({
       type: LOAD_POSTS_FAILURE,
-      data: err.response.data,
+      error: err.response.data,
     });
   }
 }
 
-// function* loadPosts(action) {
-//   try {
-//     yield delay(1000); // 서버에서 못가져오니 delay 로 서버에서 가져오는 흉내 (비동기)
-//     // LOAD_POSTS_SUCCESS 할 때 데이터 10개를 가짜로 가져옴
-//     yield put({
-//       type: LOAD_POSTS_SUCCESS,
-//       data: generateDummyPost(10)
-//     });
-//   } catch (err) {
-//     yield put({
-//       type: LOAD_POSTS_FAILURE,
-//       data: err.response.data,
-//     });
-//   }
-// }
-
 // addPost --------------
 function addPostAPI(data) {
-  return axios.post("/post", { content: data });
+  return axios.post("/post", data); // form 데이터는 무조건 그대로 보냄
+  // return axios.post("/post", { content: data }); 이제 이미지도 보냄
 }
 
 function* addPost(action) {
@@ -132,13 +129,13 @@ function* addPost(action) {
     // 내가 올리는 게시글의 id 를 post.js reducer 뿐 아니라 user.js reducer 에도 공유
     yield put({ // 게시글 수 변경 (user action)
       type: ADD_POST_TO_ME,
-      data: result.data.id, // model 객체에서 id 는 자동으로 생성됨
+      data: result.data.id, // model 객체에서 id 속성은 자동으로 생성됨
     });
   } catch (err) {
     console.error(err);
     yield put({
       type: ADD_POST_FAILURE,
-      data: err.response.data,
+      error: err.response.data,
     });
   }
 }
@@ -165,7 +162,7 @@ function* removePost(action) {
     console.error(err);
     yield put({
       type: REMOVE_POST_FAILURE,
-      data: err.response.data,
+      error: err.response.data,
     });
   }
 }
@@ -189,11 +186,64 @@ function* addComment(action) {
     console.error(err);
     yield put({
       type: ADD_COMMENT_FAILURE,
-      data: err.response.data,
+      error: err.response.data,
     });
   }
 }
 
+// uploadImages --------------
+function uploadImagesAPI(data) {
+  return axios.post('/post/images', data); // form 데이터
+  // { name: data } 이렇게 감싸면 form 데이터가 아닌 json 이 되버림
+  // form 데이터는 '그대로' 들어가야 한다.
+}
+
+function* uploadImages(action) {
+  try {
+    const result = yield call(uploadImagesAPI, action.data)
+    yield put({
+      type: UPLOAD_IMAGES_SUCCESS,
+      data: result.data,
+    });
+  } catch (err) {
+    console.error(err);
+    yield put({
+      type: UPLOAD_IMAGES_FAILURE,
+      error: err.response.data,
+    });
+  }
+}
+
+// retweet --------------
+function retweetAPI(data) {
+  return axios.post(`/post/${data}/retweet`); 
+  // data: post.id, 해당 주소 포스트를 리트윗
+}
+
+function* retweet(action) {
+  try {
+    const result = yield call(retweetAPI, action.data)
+    yield put({
+      type: RETWEET_SUCCESS,
+      data: result.data,
+    });
+  } catch (err) {
+    console.error(err);
+    yield put({
+      type: RETWEET_FAILURE,
+      error: err.response.data,
+    });
+  }
+}
+
+
+function* watchRetweet() {
+  yield takeLatest(RETWEET_REQUEST, retweet);
+}
+
+function* watchUploadImages() {
+  yield takeLatest(UPLOAD_IMAGES_REQUEST, uploadImages);
+}
 
 function* watchLikePost() {
   yield takeLatest(LIKE_POST_REQUEST, likePost);
@@ -222,6 +272,8 @@ function* watchAddComment() {
 
 export default function* postSaga() {
   yield all([
+    fork(watchRetweet), 
+    fork(watchUploadImages), 
     fork(watchLikePost), 
     fork(watchUnlikePost), 
     fork(watchLoadPost), 

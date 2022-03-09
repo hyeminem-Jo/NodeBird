@@ -11,13 +11,13 @@ const router = express.Router();
 // CRUD에서 조회는 GET(기존에 있는 정보를 띄워주기 ex. 게시글, 로그인 프로필, 팔로우 목록 ...), 
 // 등록은 POST, 수정은 PUT, 삭제는 DELETE
 
-// ** 새로고침 시 매번 사용자 정보 복구 
+// ** 새로고침 시 매번 사용자 정보 복구: GET /user/
 // (새로고침해도 브라우저에 쿠키가 남아있어 쿠키를 서버에 보냄)
 // 로그인 상태에서 새로고침 시 항상 브라우저에서 요청을 하고 쿠키 id 로 서버에서 사용자 정보 복구 후 브라우저로 보냄 => 서버에서 로그인 되었는지 조회 (GET)
 // => 하지만 사용자가 항상 로그인 상태인 것이 아닌 로그아웃인 상태도 있을 것이고, 로그아웃인 상태에서도 새로고침하면 로그인 요청이 될 수도 있다. 이 경우 req.user.id 에서 에러가남
 // => 이유: deserealizeUser 는 로그인 이후로만 실행하고, 로그인 상태가 아니라면 req.user 가 존재 x
 // => 해결: (복구된 정보)req.user 가 존재하는지(로그인 되었는지) 먼저 확인 후 브라우저로 보냄
-router.get('/', async (req, res, next) => { // GET /user/
+router.get('/', async (req, res, next) => { 
   try {
     if (req.user) { // 복구할 때도 마찬가지로 "완성된" user 정보를 가져온다.
       const fullUserWithoutPassword = await User.findOne({
@@ -57,7 +57,7 @@ router.get('/', async (req, res, next) => { // GET /user/
   }
 })
 
-// ** 로그인
+// ** 로그인 하기: POST/user/login
 // local 에서 만든 passport 전략을 user/login 부분에 실행
 // done 은 콜백의 개념이라 세개의 인자가 다음의 passport.authenticate('local', ) 의 두번째 인자로 전달됨 
 // => done(null, false, { reason: '존재하지 않는 이메일입니다!' })
@@ -135,9 +135,9 @@ router.post('/login', isNotLoggedIn,(req, res, next) => { // 미들웨어 확장
   })(req, res, next);
 }) // POST /user/login
 
-// ** 회원가입
+// ** 회원가입 하기: POST/user/
 // app.js 에 있는 "/user" 와 "/" 가 합쳐짐
-router.post('/', isNotLoggedIn, async (req, res, next) => { // POST /user/
+router.post('/', isNotLoggedIn, async (req, res, next) => { 
   // isNotLoggedIn: 로그인 안한 사람이 회원가입 접근 가능
   try {
     // email 이 겹치는 유저가 있으면 exUser 에 저장
@@ -172,7 +172,7 @@ router.post('/', isNotLoggedIn, async (req, res, next) => { // POST /user/
   }
 });
 
-// ** 로그아웃
+// ** 로그아웃: POST/user/logout
 router.post('/logout', isLoggedIn, (req, res) => { // 세션, 쿠키 지우면 끝
   // isNotLoggedIn: 로그인 한 사람이 로그아웃 접근 가능
   // router.post('/user/logout', (req, res) => { // 세션, 쿠키 지우면 끝
@@ -181,7 +181,7 @@ router.post('/logout', isLoggedIn, (req, res) => { // 세션, 쿠키 지우면 �
   res.send('ok') // 로그아웃 성공
 })
 
-// ** 닉네임 수정
+// ** 닉네임 수정: PATCH/user/nickname
 router.patch('/nickname', isLoggedIn, async (req, res, next) => {
   try {
     await User.update( // id 가 본인인 nickname 을 수정
@@ -199,7 +199,7 @@ router.patch('/nickname', isLoggedIn, async (req, res, next) => {
   }
 })
 
-// ** 팔로우 PATCH/user/1/follow
+// ** 팔로우: PATCH/user/1/follow
 router.patch('/:userId/follow', isLoggedIn, async (req, res, next) => {
   try {
     // 실존 유저인지 검사 (없는 사람을 팔로잉 할 수 없으니 팔로잉 한 유저가 실존하는지 체크)
@@ -255,7 +255,7 @@ router.delete('/follower/:userId', isLoggedIn, async (req, res, next) => {
   }
 })
 
-// ** 팔로워 유저들 목록 불러오기 (세부 정보) GET/user/followers
+// ** 팔로워 유저들 목록 불러오기 (세부 정보): GET/user/followers
 // 팔로잉, 팔로워 정보: Followers[], Followings[] 는 프로필에서 개수 표현만 하기 위해 DB 에서 attribute 를 통해 id 만 가지고 왔었다.
 // 팔로잉, 팔로워 리스트에서 그 유저들의 세부 정보를 가져와보서 표현하자
 router.get('/followers', isLoggedIn, async (req, res, next) => {
@@ -274,7 +274,7 @@ router.get('/followers', isLoggedIn, async (req, res, next) => {
   }
 })
 
-// ** 팔로잉 유저들 목록 불러오기 (세부 정보) GET/user/followings
+// ** 팔로잉 유저들 목록 불러오기 (세부 정보): GET/user/followings
 router.get('/followings', isLoggedIn, async (req, res, next) => {
   try {
     const user = await User.findOne({

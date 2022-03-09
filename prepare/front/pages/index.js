@@ -9,7 +9,20 @@ import { LOAD_USER_REQUEST } from "../reducers/user";
 const Home = () => {
   const dispatch = useDispatch();
   const { me } = useSelector((state) => state.user);
-  const { mainPosts, hasMorePosts, loadPostsLoading } = useSelector((state) => state.post);
+  const { mainPosts, hasMorePosts, loadPostsLoading, retweetError } = useSelector((state) => state.post);
+
+  // 자신의 게시글을 리트윗하려 할 때
+  useEffect(() => {
+    console.log('rerender');
+    if(retweetError) {
+      alert(retweetError); // 리렌더링이 계속되면 alert 도 계속뜨는 에러가 발생
+      // 리렌더링이 계속 되면서 alert 가 계속 뜸
+      // 리렌더링이 8번 뜸 => 게시글도 8번임 => 연관성 o
+      // 이유: PostCard 8개에서 모두 useEffect 가 실행되버림 
+      // 해결: 해당 useEffect 를 상위 컴포넌트로 옮김 (PostCard.js > pages 의 index.js)
+      // 또 다른 해결 방법: dependency[] 에 RetweetId 도 같이 넣어 리트윗 게시글에서만 실행 되도록
+    }
+  }, [retweetError]);
 
   // 동시에 게시글들, 사용자 정보 불러오기
   // 메인 페이지에 접근할 때마다 렌더되어 다음이 실행
@@ -38,8 +51,12 @@ const Home = () => {
         if (hasMorePosts && !loadPostsLoading) { 
           // 로딩이 되고 있을 동안 loadPostsLoading 은 true 이므로 해당 코드 실행되지 x
           // 로딩이 끝나고 나서 loadPostsLoading 가 false 가 되면 그때 실행
+          const lastId = mainPosts[mainPosts.length - 1]?.id // 마지막 게시글 id
+          // && 대신 optional chaining 활용 
+          // => 게시물이 하나도 없을 경우 undefined.id 에러가 발생할 수 있으므로 ?. 로 방지
           dispatch({
             type: LOAD_POSTS_REQUEST, // 스크롤 다 내리면 다음 더미데이터 로딩해라
+            lastId, // 마지막 게시글 id
           })
         }
       }
@@ -49,7 +66,7 @@ const Home = () => {
     return () => {
       window.removeEventListener("scroll", onScroll);
     };
-  }, [hasMorePosts, loadPostsLoading]);
+  }, [hasMorePosts, loadPostsLoading, mainPosts]);
 
   return (
     <AppLayout>

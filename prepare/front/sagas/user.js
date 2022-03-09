@@ -187,16 +187,17 @@ function* removeFollower(action) {
 }
 
 // loadFollowers --------------
-function loadFollowersAPI(data) { // 팔로워 목록 불러오기
-  return axios.get('user/followers', data);
+function loadFollowersAPI() { // 팔로워 목록 불러오기
+  return axios.get('user/followers');
 }
 
 function* loadFollowers(action) {
   try { 
-    const result = yield call(loadFollowersAPI, action.data) 
+    const result = yield call(loadFollowersAPI, action.data)
     yield put({ 
       type: LOAD_FOLLOWERS_SUCCESS,
       data: result.data,
+      // result.data = [ {id: 12, nickname: jinny ...}, {}, ... ] 
     })
   } catch (err) { 
     console.error(err);
@@ -208,8 +209,8 @@ function* loadFollowers(action) {
 }
 
 // loadFollowings --------------
-function loadFollowingsAPI(data) { // 내 팔로잉에서 제거할 유저 id
-  return axios.get('user/followings', data);
+function loadFollowingsAPI() { // 내 팔로잉에서 제거할 유저 id
+  return axios.get('user/followings');
 }
 
 function* loadFollowings(action) {
@@ -218,6 +219,7 @@ function* loadFollowings(action) {
     yield put({ 
       type: LOAD_FOLLOWINGS_SUCCESS,
       data: result.data,
+      // result.data = [ {id: 12, nickname: jinny ...}, {}, ... ] 
     })
   } catch (err) { 
     console.error(err);
