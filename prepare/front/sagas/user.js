@@ -7,11 +7,35 @@ import { LOG_IN_REQUEST, LOG_IN_SUCCESS, LOG_IN_FAILURE,
   LOG_OUT_REQUEST, LOG_OUT_SUCCESS, LOG_OUT_FAILURE,
   SIGN_UP_REQUEST, SIGN_UP_SUCCESS, SIGN_UP_FAILURE, 
   FOLLOW_REQUEST, UNFOLLOW_REQUEST, FOLLOW_SUCCESS, 
-  FOLLOW_FAILURE, UNFOLLOW_FAILURE, UNFOLLOW_SUCCESS, LOAD_USER_REQUEST, LOAD_USER_SUCCESS, LOAD_USER_FAILURE, CHANGE_NICKNAME_REQUEST, CHANGE_NICKNAME_SUCCESS, CHANGE_NICKNAME_FAILURE, LOAD_FOLLOWERS_REQUEST, LOAD_FOLLOWINGS_REQUEST, LOAD_FOLLOWERS_SUCCESS, LOAD_FOLLOWERS_FAILURE, LOAD_FOLLOWINGS_SUCCESS, LOAD_FOLLOWINGS_FAILURE, REMOVE_FOLLOWER_REQUEST, REMOVE_FOLLOWER_SUCCESS, REMOVE_FOLLOWER_FAILURE } from '../reducers/user';
+  FOLLOW_FAILURE, UNFOLLOW_FAILURE, UNFOLLOW_SUCCESS, LOAD_USER_REQUEST, LOAD_USER_SUCCESS, LOAD_USER_FAILURE, CHANGE_NICKNAME_REQUEST, CHANGE_NICKNAME_SUCCESS, CHANGE_NICKNAME_FAILURE, LOAD_FOLLOWERS_REQUEST, LOAD_FOLLOWINGS_REQUEST, LOAD_FOLLOWERS_SUCCESS, LOAD_FOLLOWERS_FAILURE, LOAD_FOLLOWINGS_SUCCESS, LOAD_FOLLOWINGS_FAILURE, REMOVE_FOLLOWER_REQUEST, REMOVE_FOLLOWER_SUCCESS, REMOVE_FOLLOWER_FAILURE, LOAD_MY_INFO_REQUEST, LOAD_MY_INFO_SUCCESS, LOAD_MY_INFO_FAILURE } from '../reducers/user';
+
+
+// loadMyInfo --------------
+function loadMyInfoAPI() {
+  return axios.get('/user'); // data 는 없음
+  // 3065 에 get 요청을 보냄
+} 
+// GET 이나 DELETE 는 data 가 없기 때문에, 세번째가 아닌 두번째 인자에 {withCredentials: true} 같은 옵션을 넣어줌
+
+function* loadMyInfo() {
+  try { 
+    const result = yield call(loadMyInfoAPI) 
+    yield put({ 
+      type: LOAD_MY_INFO_SUCCESS,
+      data: result.data, // 서버로부터 사용자 정보 받기
+    })
+  } catch (err) { 
+    console.error(err);
+    yield put({
+      type: LOAD_MY_INFO_FAILURE,
+      error: err.response.data,
+    })
+  }
+}
 
 // loadUser --------------
-function loadUserAPI() {
-  return axios.get('/user') // data 는 없음
+function loadUserAPI(data) {
+  return axios.get(`/user/${data}`) // 사용자(상대방) 데이터
   // 3065 에 get 요청을 보냄
 } 
 // GET 이나 DELETE 는 data 가 없기 때문에, 세번째가 아닌 두번째 인자에 {withCredentials: true} 같은 옵션을 넣어줌
@@ -247,6 +271,10 @@ function* watchChangeNickname() {
   yield takeLatest(CHANGE_NICKNAME_REQUEST, changeNickname); 
 }
 
+function* watchLoadMyInfo() {
+  yield takeLatest(LOAD_MY_INFO_REQUEST, loadMyInfo); 
+}
+
 function* watchLoadUser() {
   yield takeLatest(LOAD_USER_REQUEST, loadUser); 
 }
@@ -276,6 +304,7 @@ export default function* userSaga() {
     fork(watchLoadFollowers),
     fork(watchLoadFollowings),
     fork(watchChangeNickname),
+    fork(watchLoadMyInfo),
     fork(watchLoadUser),
     fork(watchLogIn),
     fork(watchLogOut),

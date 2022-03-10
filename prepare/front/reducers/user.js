@@ -16,7 +16,11 @@ export const initialState = {
   signUpDone: false,
   signUpError: null,
 
-  loadUserLoading: false, // 사용자 정보 불러오기 시도중
+  loadMyInfoLoading: false, // 나의 정보 불러오기 시도중
+  loadMyInfoDone: false,
+  loadMyInfoError: null,
+
+  loadUserLoading: false, // 사용자(상대방 정보) 정보 불러오기 시도중 
   loadUserDone: false,
   loadUserError: null,
 
@@ -44,9 +48,8 @@ export const initialState = {
   removeFollowerDone: false,
   removeFollowerError: null,
 
-  me: null,
-  signUpData: {},
-  loginData: {},
+  me: null, // 나의 정보
+  userInfo: null, // 상대방 정보
 };
 
 // saga 에서도 action 을 써야하기 때문에 export 해주기
@@ -58,6 +61,10 @@ export const LOAD_FOLLOWERS_FAILURE = "LOAD_FOLLOWERS_FAILURE";
 export const LOAD_FOLLOWINGS_REQUEST = "LOAD_FOLLOWINGS_REQUEST";
 export const LOAD_FOLLOWINGS_SUCCESS = "LOAD_FOLLOWINGS_SUCCESS";
 export const LOAD_FOLLOWINGS_FAILURE = "LOAD_FOLLOWINGS_FAILURE";
+
+export const LOAD_MY_INFO_REQUEST = "LOAD_MY_INFO_REQUEST";
+export const LOAD_MY_INFO_SUCCESS = "LOAD_MY_INFO_SUCCESS";
+export const LOAD_MY_INFO_FAILURE = "LOAD_MY_INFO_FAILURE";
 
 export const LOAD_USER_REQUEST = "LOAD_USER_REQUEST";
 export const LOAD_USER_SUCCESS = "LOAD_USER_SUCCESS";
@@ -132,7 +139,24 @@ export const logoutRequestAction = () => {
 const reducer = (state = initialState, action) => {
   return produce(state, (draft) => {
     switch (action.type) {
-      // 사용자 정보 불러오기 액션 처리 --------------------------
+
+      // 나의 정보 불러오기 액션 처리 --------------------------
+      case LOAD_MY_INFO_REQUEST:
+        draft.loadMyInfoLoading = true;
+        draft.loadMyInfoError = null;
+        draft.loadMyInfoDone = false; // 초기화
+        break;
+      case LOAD_MY_INFO_SUCCESS:
+        draft.loadMyInfoLoading = false;
+        draft.loadMyInfoDone = true;
+        draft.me = action.data; 
+        break;
+      case LOAD_MY_INFO_FAILURE:
+        draft.loadMyInfoLoading = false;
+        draft.loadMyInfoError = action.error;
+        break;
+
+      // 사용자 정보(남의 정보) 불러오기 액션 처리 --------------------------
       case LOAD_USER_REQUEST:
         draft.loadUserLoading = true;
         draft.loadUserError = null;
@@ -141,7 +165,7 @@ const reducer = (state = initialState, action) => {
       case LOAD_USER_SUCCESS:
         draft.loadUserLoading = false;
         draft.loadUserDone = true;
-        draft.me = action.data; 
+        draft.userInfo = action.data; 
         // 새로고침 시 
         // 로그인 상태: 아까 if(req.user) 에서 user 정보를 받고 action.data 로 넘어옴, 이를 me 객체로 넣음
         // 로그아웃 상태: else 에서 null 을 data 받음, 이를 me 객체로 넣음

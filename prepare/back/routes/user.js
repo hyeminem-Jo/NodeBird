@@ -11,13 +11,15 @@ const router = express.Router();
 // CRUD에서 조회는 GET(기존에 있는 정보를 띄워주기 ex. 게시글, 로그인 프로필, 팔로우 목록 ...), 
 // 등록은 POST, 수정은 PUT, 삭제는 DELETE
 
-// ** 새로고침 시 매번 사용자 정보 복구: GET /user/
+// ** 새로고침 시 매번 사용자 정보 복구: GET /user/ => LOAD_MY_INFO
 // (새로고침해도 브라우저에 쿠키가 남아있어 쿠키를 서버에 보냄)
 // 로그인 상태에서 새로고침 시 항상 브라우저에서 요청을 하고 쿠키 id 로 서버에서 사용자 정보 복구 후 브라우저로 보냄 => 서버에서 로그인 되었는지 조회 (GET)
 // => 하지만 사용자가 항상 로그인 상태인 것이 아닌 로그아웃인 상태도 있을 것이고, 로그아웃인 상태에서도 새로고침하면 로그인 요청이 될 수도 있다. 이 경우 req.user.id 에서 에러가남
 // => 이유: deserealizeUser 는 로그인 이후로만 실행하고, 로그인 상태가 아니라면 req.user 가 존재 x
 // => 해결: (복구된 정보)req.user 가 존재하는지(로그인 되었는지) 먼저 확인 후 브라우저로 보냄
 router.get('/', async (req, res, next) => { 
+  console.log(req.headers); // headers 안에 쿠키 들음
+  // 쿠키가 제대로 전달되는지 확인
   try {
     if (req.user) { // 복구할 때도 마찬가지로 "완성된" user 정보를 가져온다.
       const fullUserWithoutPassword = await User.findOne({
