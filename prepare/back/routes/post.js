@@ -54,6 +54,58 @@ const upload = multer({
 // 하나 이상의 input(업로드 칸이 두개씩 있을 때) 일 때: fills ('image')
 // 이미지가 아닌 text 만 올릴 때: none()
 
+// ** 게시물(공유) 하나만 불러오기: (GET /post/1 => ex.1번 게시글 가져오기)
+router.get('/:postId', async (req, res, next) => { 
+  try {
+    // 조건: 게시글이 존재한다면
+    const post = await Post.findOne({
+      where: { id: req.params.postId },
+    });
+    if (!post) { // 조건: 게시글이 존재하지 않는 다면
+      return res.status(404).send('존재하지 않는 게시글입니다.');
+    }
+    
+    const fullPost = await Post.findOne({
+      where: { id: post.id },
+      include: [
+        { 
+          model: Post, // 원본 게시글
+          as: 'Retweet', // 리트윗 게시글 <-> 원본 게시글 관계테이블
+          include: [{
+            model: User, // 원본 게시글 작성자
+            attributes: ['id', 'nickname'],
+          }, {
+            model: Image,
+          }]
+        }, 
+        {
+          model: User, // 원본 게시글 작성자
+          attributes: ['id', 'nickname'],
+        },
+        {
+          model: Image,
+        },
+        {
+          model: Comment,
+          include: [{
+            model: User,
+            attributes: ['id', 'nickname'],            
+          }]
+        },
+        {
+          model: User,
+          as: 'Likers', // 좋아요 누른 목록
+          attributes: ['id', 'nickname'],
+        },
+      ],
+    })
+    res.status(200).json(fullPost); // 프론트로 다시 보냄
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+})
+
 // ** 게시글 추가하기: POST /post
 // upload.none(): 이미지 없이 글만 올리기 
 // 미리보기 구현 때 formData 로 이미지를 받아 upload.array() 를 통해 이미지 정보가 서버로 넘어갔고, 지금은 formData 로부터 글과 이미지 주소 이름, 즉 text 만 받아오기 때문에 none() 을 사용
@@ -270,7 +322,7 @@ router.post('/:postId/retweet', isLoggedIn, async (req, res, next) => {
         {
           model: User,
           as: 'Likers', // 좋아요 누른 목록ㄱ
-          attributes: ['id'],
+          attributes: ['id', 'nickname'],
         },
       ],
     })

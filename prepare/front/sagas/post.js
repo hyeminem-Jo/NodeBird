@@ -30,6 +30,9 @@ import {
   RETWEET_REQUEST,
   RETWEET_SUCCESS,
   RETWEET_FAILURE,
+  LOAD_POST_REQUEST,
+  LOAD_POST_SUCCESS,
+  LOAD_POST_FAILURE,
   // generateDummyPost,
 } from "../reducers/post";
 
@@ -79,6 +82,28 @@ function* unlikePost(action) {
     console.error(err);
     yield put({
       type: UNLIKE_POST_FAILURE,
+      error: err.response.data,
+    });
+  }
+}
+
+// loadPost --------------
+// 서버에서 공유할 게시글 불러오는 요청(게시글 조회, get)
+function loadPostAPI(data) {
+  return axios.get(`/post/${data}`); 
+}
+
+function* loadPost(action) {
+  try {
+    const result = yield call(loadPostAPI, action.data)
+    yield put({
+      type: LOAD_POST_SUCCESS,
+      data: result.data, 
+    });
+  } catch (err) {
+    console.error(err);
+    yield put({
+      type: LOAD_POST_FAILURE,
       error: err.response.data,
     });
   }
@@ -254,6 +279,10 @@ function* watchUnlikePost() {
 }
 
 function* watchLoadPost() {
+  yield takeLatest(LOAD_POST_REQUEST, loadPost);
+}
+
+function* watchLoadPosts() {
   // yield takeLatest(LOAD_POSTS_REQUEST, loadPosts);
   yield throttle(5000, LOAD_POSTS_REQUEST, loadPosts);
 }
@@ -277,6 +306,7 @@ export default function* postSaga() {
     fork(watchLikePost), 
     fork(watchUnlikePost), 
     fork(watchLoadPost), 
+    fork(watchLoadPosts), 
     fork(watchAddPost), 
     fork(watchRemovePost), 
     fork(watchAddComment)

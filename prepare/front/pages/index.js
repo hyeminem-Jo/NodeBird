@@ -98,10 +98,13 @@ export const getServerSideProps = wrapper.getServerSideProps(
     // 이 코드가 있어야 서버까지 쿠키가 전달이 됨 (프론트서버 => 백엔드서버)
     // 원래 이전엔 브라우저에서 서버로 요청을 했고, 브라우저는 쿠키를 자동으로 전달해준다.
     // 하지만 ssr 에서는 서버가 주체이며, 프론트서버에서 백서버로 쿠키를 전달하기 때문에 쿠키를 직접 axios 로 전달해줘야 한다.
-    // const cookie = context.req ? context.req.headers.cookie : '';
+
+    // next 로 ssr 할 때 매우 중요한 부분 (중요!!!!!!!!!!!!!!!!!!!!!!) 
     const cookie = req ? req.headers.cookie : '';
-    axios.defaults.headers.Cookie = '';
-    if (req && cookie) {
+    // 문제: 이 부분은 서버쪽에서 실행되기 때문에 위험할 수 있다. 브라우저는 각각 자기의 몫만 하지만 서버는 중앙에 딱 하나이기 때문에 axios.defaults.headers.Cookie 에서 우리의 cookie 값을 넣어버리는 경우가 생기면 다른 사람이 요청을 보냈을 때 우리의 cookie 가 거기로 보내지는, 즉 쿠키가 공유되는 엄청난 문제가 발생할 수 있다.
+    // 해결: 서버일때와 쿠키가 있을 때만 쿠키값 삽입이 실행되도록 해준다.
+    axios.defaults.headers.Cookie = ''; // if (!req && !cookie) 일땐 쿠키 지워주기
+    if (req && cookie) { // if (req && cookie) 일땐 쿠키 삽입해주기
       axios.defaults.headers.Cookie = cookie;
     }
 

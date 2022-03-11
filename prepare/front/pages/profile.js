@@ -5,7 +5,12 @@ import FollowList from "../components/FollowList";
 import Head from "next/head";
 import { useDispatch, useSelector } from "react-redux";
 import Router from "next/router";
-import { LOAD_FOLLOWERS_REQUEST, LOAD_FOLLOWINGS_REQUEST, LOAD_USER_REQUEST } from "../reducers/user";
+import { LOAD_FOLLOWERS_REQUEST, LOAD_FOLLOWINGS_REQUEST, LOAD_MY_INFO_REQUEST, LOAD_USER_REQUEST } from "../reducers/user";
+import axios from "axios";
+import { END } from 'redux-saga';
+import wrapper from "../store/configureStore";
+
+
 // 프로필 페이지에 접근할 때마다 렌더되어 다음이 실행
 const Profile = () => {
   const dispatch = useDispatch();
@@ -51,5 +56,26 @@ const Profile = () => {
     </>
   );
 };
+
+// 나의 로그인(로그인 정보) 여부에 따라 화면이 '바뀜' (로그인이 되어있지 않을 때 프로필 페이지가 안보여야함)
+// => getServerSideProps 필요
+export const getServerSideProps = wrapper.getServerSideProps((store) => async ({ req }) => {
+  // 서버쪽에서 실행되면 req 라는 것이 존재한다.
+  console.log('getServerSideProps start');
+  console.log(req.headers);
+  const cookie = req ? req.headers.cookie : '';
+  axios.defaults.headers.Cookie = ''; 
+  if (req && cookie) { 
+    axios.defaults.headers.Cookie = cookie;
+  }
+  
+  store.dispatch({
+    type: LOAD_MY_INFO_REQUEST,
+  });
+  
+  store.dispatch(END);
+  console.log('getServerSideProps end');
+  await store.sagaTask.toPromise();
+});
 
 export default Profile;

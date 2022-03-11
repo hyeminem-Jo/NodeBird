@@ -11,7 +11,9 @@ const router = express.Router();
 // CRUD에서 조회는 GET(기존에 있는 정보를 띄워주기 ex. 게시글, 로그인 프로필, 팔로우 목록 ...), 
 // 등록은 POST, 수정은 PUT, 삭제는 DELETE
 
-// ** 새로고침 시 매번 사용자 정보 복구: GET /user/ => LOAD_MY_INFO
+
+// 내(me) 정보(Jinny) 가져오기: GET /user/ => LOAD_MY_INFO
+// ** 새로고침 시 매번 내(me) 정보 복구
 // (새로고침해도 브라우저에 쿠키가 남아있어 쿠키를 서버에 보냄)
 // 로그인 상태에서 새로고침 시 항상 브라우저에서 요청을 하고 쿠키 id 로 서버에서 사용자 정보 복구 후 브라우저로 보냄 => 서버에서 로그인 되었는지 조회 (GET)
 // => 하지만 사용자가 항상 로그인 상태인 것이 아닌 로그아웃인 상태도 있을 것이고, 로그아웃인 상태에서도 새로고침하면 로그인 요청이 될 수도 있다. 이 경우 req.user.id 에서 에러가남
@@ -21,7 +23,8 @@ router.get('/', async (req, res, next) => {
   console.log(req.headers); // headers 안에 쿠키 들음
   // 쿠키가 제대로 전달되는지 확인
   try {
-    if (req.user) { // 복구할 때도 마찬가지로 "완성된" user 정보를 가져온다.
+    if (req.user) { // (복구된 정보)req.user 가 존재하는지(로그인 되었는지) 먼저 확인
+      // 복구할 때도 마찬가지로 "완성된" user 정보를 가져온다.
       const fullUserWithoutPassword = await User.findOne({
         // 로그인 이후로는 항상 라우터 접근 전 deserealizeUser 에 들러 쿠키의 id 를 통해 복구된 사용자 정보(user) 를 req.user 에 담음
         where: { id: req.user.id },
@@ -30,7 +33,7 @@ router.get('/', async (req, res, next) => {
         },
         include: [ 
           {
-            model: Post,
+            model: Post, // db 를 통해 Posts 가 됨
             attributes: ['id'],
             // 서버로부터 필요한 데이터만 불러오기
             // 게시글 내용, 팔로잉, 팔로워까지 전부 통채로 가져오면 데이터 용량이 크기 때문에 id 만 가져옴
@@ -48,12 +51,75 @@ router.get('/', async (req, res, next) => {
           },
         ]
       })
-      res.status(200).json(fullUserWithoutPassword); 
+      res.status(200).json(fullUserWithoutPassword); // JSON.parse()
       // 로그인 상태에서 새로고침 시 서버에서 사용자 정보 복구 후 브라우저로 보냄
+      // fetch API의 응답(response) 객체는json()를 제공하고 있어JSON.parse() 대신 사용할 수 있다.
+      // response.json()메서드를 호출하면 JSON 데이터를 javascript 객체로 변환한다. 
     } else {
       res.status(200).json(null); // 로그아웃 때 새로고침 시 아무것도 안보내면 됨
     }
   } catch (error) {
+    console.error(error);
+    next(error);
+  }
+})
+
+// 사용자(userInfo) 정보 (Jinny2) 가져오기: GET /user/1 => LOAD_USER
+router.get('/:userId', async (req, res, next) => { 
+  console.log(req.headers); // headers 안에 쿠키 들음
+  // 쿠키가 제대로 전달되는지 확인
+  try {
+    const fullUserWithoutPassword = await User.findOne({
+      where: { id: req.params.userId },
+      attributes: {
+        exclude: ['password'] 
+      },
+      include: [ 
+        {
+          model: Post, // db 를 통해 Posts 가 됨
+          attributes: ['id'],
+          // 내 로그인 정보때처럼 타인의 로그인 정보도 서버로부터 필요한 데이터만 불러오기
+          // 게시글 내용, 팔로잉, 팔로워까지 전부 통채로 가져오면 데이터 용량이 크기 때문에 id 만 가져옴
+          // 첫 화면에서는 게시글, 팔로잉, 팔로워의 갯수(length) 만 필요
+        },
+        {
+          model: User,
+          as: 'Followings',
+          attributes: ['id'],
+        },
+        {
+          model: User,
+          as: 'Followers',
+          attributes: ['id'],
+        },
+      ]
+    })
+    // ** 개인 정보 침해 방지
+    // 주소에 쳐서 없는 사용자를 찾을 때 => 남의 정보를 가져올 때 '아예 없는' id 를 가져올 수 있음
+    // ex) 아직 사용자가 900명 밖에 없는데, GET /user/1000 로 검색해서 찾으려는 경우
+    // 주소에 보낸 id 를 params.id로 해서 where 로 찾았을 때 해당 데이터가 있다면
+    if (fullUserWithoutPassword) { 
+      // 시퀄라이즈에서 보내는 데이터는 json 이 아니므로 json 으로 바꿔서 우리가 쓸 수 있는 데이터로 보내줌
+      const data = fullUserWithoutPassword.toJSON(); // json 으로 바꿈
+      data.Posts = data.Posts.length; // 개인 방지 침해 예방
+      // Posts 자체를 Posts.length 로 바꿔버림
+      // 이렇게 하면 데이터에 id 들 없이 length 만 들어감 (Followings, Followers 도 마찬가지)
+      data.Followings = data.Followings.length;
+      data.Followers = data.Followers.length;
+      // 남의 정보(프로필)를 열람할 때 Posts, Followings, Followers 의 length 뿐만 아니라 id 까지 노출되버린다.
+      // => Posts 의 경우 갯수 뿐 아니라 어떤 게시글(id)을 썼는지, Followings Followers 의 경우 팔로잉 팔로가 누군지에 대한 정보(id)가 다 노출이 되버린다.
+      // 나한테 나(me)의 정보라면 보여도 괜찮지만 남의 정보(userInfo) 가 세세히 노출되면 안되기 때문에 더 특별히 신경써줘야 한다. 
+      // []자체로 보내지면 그 안의 내용물들이 보이기 때문에, 여기서 보여져도 되는 정보만 json 으로 갈아끼워  프론트로 전달해준다.
+      res.status(200).json(data); // JSON.parse() = string 객체를 json 객체로 변환
+      // fetch API의 응답(response) 객체는json()를 제공하고 있어JSON.parse() 대신 사용할 수 있다.
+      // response.json()메서드를 호출하면 JSON 데이터를 javascript 객체로 변환한다. 
+      // 시퀄라이즈 데이터 => json 객체(우리가 쓸 수 있도록) => jacascript 객체로 변환(프론트로 전달)
+      // 로그인 상태에서 새로고침 시 서버에서 사용자 정보 복구 후 브라우저로 보냄
+    } 
+      else {
+        res.status(404).json('존재하지 않는 사용자입니다.'); 
+      }
+    } catch (error) {
     console.error(error);
     next(error);
   }

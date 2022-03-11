@@ -4,6 +4,8 @@ import produce from 'immer';
 
 export const initialState = {
   mainPosts: [], // 실제로는 이렇게 비어있는 채로 서버에서 받는다. 
+  singlePost: null, // 게시글 하나만 넣으므로 [] 가 아닌 null 로 해둠
+  // 공유할 게시글 (카톡 등...)
   imagePaths: [], // 게시글에 이미지를 업로드 할 때, 이미지의 경로들이 저장되는 공간
 
   // 이미지 업로드
@@ -25,6 +27,11 @@ export const initialState = {
   unlikePostLoading: false,
   unlikePostDone: false,
   unlikePostError: null,
+
+  // 단일 게시물 로드
+  loadPostLoading: false,
+  loadPostDone: false,
+  loadPostError: null,
 
   // 게시물들 로드
   hasMorePosts: true, // 처음 데이터는 무조건 가져와야함 (초반에는 반드시 게시물이 떠야하므로)
@@ -72,6 +79,10 @@ export const LIKE_POST_FAILURE = "LIKE_POST_FAILURE";
 export const UNLIKE_POST_REQUEST = "UNLIKE_POST_REQUEST";
 export const UNLIKE_POST_SUCCESS = "UNLIKE_POST_SUCCESS";
 export const UNLIKE_POST_FAILURE = "UNLIKE_POST_FAILURE";
+
+export const LOAD_POST_REQUEST = "LOAD_POST_REQUEST";
+export const LOAD_POST_SUCCESS = "LOAD_POST_SUCCESS";
+export const LOAD_POST_FAILURE = "LOAD_POST_FAILURE";
 
 export const LOAD_POSTS_REQUEST = "LOAD_POSTS_REQUEST";
 export const LOAD_POSTS_SUCCESS = "LOAD_POSTS_SUCCESS";
@@ -193,7 +204,23 @@ const reducer = (state = initialState, action) => {
         draft.unlikePostError = action.error;
         break;
 
-      // 처음 메인화면에 게시글들 삽입 액션 처리 --------------------------
+      // 공유된 게시글 불러오기 액션 처리 --------------------------
+      case LOAD_POST_REQUEST:
+        draft.loadPostLoading = true;
+        draft.loadPostDone = false;
+        draft.loadPostError = null;
+        break;
+      case LOAD_POST_SUCCESS:
+        draft.loadPostLoading = false;
+        draft.loadPostDone = true;
+        draft.singlePost = action.data; 
+        break;
+      case LOAD_POST_FAILURE:
+        draft.loadPostLoading = false;
+        draft.loadPostError = action.error;
+        break;
+
+      // 메인화면에 게시글들 불러오기 액션 처리 --------------------------
       case LOAD_POSTS_REQUEST:
         draft.loadPostsLoading = true;
         draft.loadPostsDone = false;
