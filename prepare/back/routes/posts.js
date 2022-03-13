@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get("/", async (req, res, next) => { // GET /posts/
   try {
-    const where = {}; // where 을 따로 뺌
+    const where = {}; // 모든 posts (where 을 따로 뺌)
     // 이유: 초기 로딩일 때와 초기 로딩이 아닐 때 불러오는 조건이 다름
     // 초기 로딩일 때: 그냥 최신글 10개 불러옴
     // 초기 로딩이 아닐 때: 스크롤을 내려 더 불러오는 상황, lastId 다음 것을 불러와야함
@@ -16,7 +16,7 @@ router.get("/", async (req, res, next) => { // GET /posts/
     // 초기 로딩이 아닐 때 (0 은 falsy 한 값)
     if (parseInt(req.query.lastId, 10)) {
       where.id = { [Op.lt]: parseInt(req.query.lastId, 10) } 
-      // lastId(마지막 게시물) 보다 작은 id 들을 10개(limit: 10) 불러오기
+      // 모든 posts 중 lastId(마지막 게시물) 보다 작은 id 들을 10개(limit: 10) 불러오기
       // '보다 작은' 을 시퀄라이즈에서는 Op(operator) 를 씀
     }
     // 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 페이지일 때

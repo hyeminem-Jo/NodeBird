@@ -12,6 +12,7 @@ const postRouter = require('./routes/post');
 // post 라우터에서는 게시글 하나만 쓰고 지우고, 댓글 하나만 쓰고 삭제하고 등.. 
 // posts 라우터에서는 게시글을 여러 개 다룸
 const postsRouter = require('./routes/posts');
+const hashtagRouter = require('./routes/hashtag');
 const userRouter = require('./routes/user');
 const db = require('./models'); // sequelize 가 들어잇는 db
 // db 를 조작할 땐 항상 await 을 써준다.
@@ -73,6 +74,7 @@ app.get('/', (req, res) => { // 메인페이지('/') 를 가져온다(get)
   res.send('hello express');
 })
 
+app.use('/hashtag', hashtagRouter); 
 app.use('/posts', postsRouter); 
 app.use('/post', postRouter); // => 중복된 것이 바깥으로 빠져나감
 app.use('/user', userRouter); 

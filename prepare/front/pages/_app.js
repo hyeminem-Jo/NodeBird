@@ -1,3 +1,4 @@
+// _app.js 에서 모든 페이지들의 공통페이지를 만듦
 import React from "react";
 import Proptypes from "prop-types";
 import Head from "next/head";

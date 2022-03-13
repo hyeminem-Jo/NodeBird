@@ -33,6 +33,12 @@ import {
   LOAD_POST_REQUEST,
   LOAD_POST_SUCCESS,
   LOAD_POST_FAILURE,
+  LOAD_HASHTAG_POSTS_REQUEST,
+  LOAD_USER_POSTS_REQUEST,
+  LOAD_USER_POSTS_SUCCESS,
+  LOAD_USER_POSTS_FAILURE,
+  LOAD_HASHTAG_POSTS_SUCCESS,
+  LOAD_HASHTAG_POSTS_FAILURE,
   // generateDummyPost,
 } from "../reducers/post";
 
@@ -104,6 +110,57 @@ function* loadPost(action) {
     console.error(err);
     yield put({
       type: LOAD_POST_FAILURE,
+      error: err.response.data,
+    });
+  }
+}
+
+
+// loadUserPosts --------------
+// 서버에서 게시글들 불러오는 요청(게시글 조회, get)
+function loadUserPostsAPI(data, lastId) {
+  return axios.get(`/user/${data}/posts?lastId=${lastId || 0}`); 
+}
+
+function* loadUserPosts(action) {
+  try {
+    const result = yield call(loadUserPostsAPI, action.data, action.lastId)
+    yield put({
+      type: LOAD_USER_POSTS_SUCCESS,
+      data: result.data, // 게시글들 배열 [{}, {}, {}...]
+    });
+  } catch (err) {
+    console.error(err);
+    yield put({
+      type: LOAD_USER_POSTS_FAILURE,
+      error: err.response.data,
+    });
+  }
+}
+
+
+// loadHashtagPosts --------------
+function loadHashtagPostsAPI(data, lastId) {
+  return axios.get(`/hashtag/${encodeURIComponent(data)}?lastId=${lastId || 0}`); 
+  // data 에 "리액트" 와 같은 한글이 들어감 
+  // => 서버 요청할 때 한글이 들어가면 에러가 난다.
+  // => 해결: encodeURIComponent(data): 주소창에 넣어도되는 문구로 바뀜 
+  // ex) encodeURIComponent("리액트") > '%EB%A6%AC%EC%95%A1%ED%8A%B8'
+  // 이는 decodeURIComponent() 를 하면 다시 원래대로 돌아온다 > "리액트"
+}
+
+function* loadHashtagPosts(action) {
+  try {
+    console.log('loadHashtag console');
+    const result = yield call(loadHashtagPostsAPI, action.data, action.lastId)
+    yield put({
+      type: LOAD_HASHTAG_POSTS_SUCCESS,
+      data: result.data, // 게시글들 배열 [{}, {}, {}...]
+    });
+  } catch (err) {
+    console.error(err);
+    yield put({
+      type: LOAD_HASHTAG_POSTS_FAILURE,
       error: err.response.data,
     });
   }
@@ -282,6 +339,14 @@ function* watchLoadPost() {
   yield takeLatest(LOAD_POST_REQUEST, loadPost);
 }
 
+function* watchLoadUserPosts() {
+  yield throttle(5000, LOAD_USER_POSTS_REQUEST, loadUserPosts);
+}
+
+function* watchLoadHashtagPosts() {
+  yield throttle(5000, LOAD_HASHTAG_POSTS_REQUEST, loadHashtagPosts);
+}
+
 function* watchLoadPosts() {
   // yield takeLatest(LOAD_POSTS_REQUEST, loadPosts);
   yield throttle(5000, LOAD_POSTS_REQUEST, loadPosts);
@@ -306,6 +371,8 @@ export default function* postSaga() {
     fork(watchLikePost), 
     fork(watchUnlikePost), 
     fork(watchLoadPost), 
+    fork(watchLoadUserPosts), 
+    fork(watchLoadHashtagPosts), 
     fork(watchLoadPosts), 
     fork(watchAddPost), 
     fork(watchRemovePost), 
