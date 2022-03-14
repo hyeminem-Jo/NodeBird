@@ -212,7 +212,7 @@ function* removeFollower(action) {
 
 // loadFollowers --------------
 function loadFollowersAPI() { // 팔로워 목록 불러오기
-  return axios.get('user/followers');
+  return axios.get('/user/followers');
 }
 
 function* loadFollowers(action) {
@@ -234,7 +234,7 @@ function* loadFollowers(action) {
 
 // loadFollowings --------------
 function loadFollowingsAPI() { // 내 팔로잉에서 제거할 유저 id
-  return axios.get('user/followings');
+  return axios.get('/user/followings');
 }
 
 function* loadFollowings(action) {

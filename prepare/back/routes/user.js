@@ -11,6 +11,7 @@ const router = express.Router();
 // CRUD에서 조회는 GET(기존에 있는 정보를 띄워주기 ex. 게시글, 로그인 프로필, 팔로우 목록 ...), 
 // 등록은 POST, 수정은 PUT, 삭제는 DELETE
 
+// *** 라우터 순서 중요 (위에서 아래로 읽어나가기 때문에 중간에 다른 라우터가 걸림)
 
 // 내(me) 정보(Jinny) 가져오기: GET /user/ => LOAD_MY_INFO
 // ** 새로고침 시 매번 내(me) 정보 복구
@@ -63,6 +64,56 @@ router.get('/', async (req, res, next) => {
     next(error);
   }
 })
+
+// *** 404 가 뜨는 이유: "존재하지 않는 페이지"
+// => 하지만 분명 라우터 주소도 틀리지 않고 코드안에 404 같은 에러는 넣지 않았는데...
+// => 답: 미들웨어는 왼쪽 위에서부터 실행되는데, 라우터 역시 미들웨어이므로 마찬가지이다.(req, res, next) 이때 params 부분, ex) user/follows 를 요청할 때 읽어내려가는 중간에 user/:userId(user/1) 에서 :userId(1) 가 follows 로 인식되어 걸려버리고 만다.
+// 와일드카드, 즉 params 부분은 앵간 맨 아래에 위치시켜준다.
+
+// ** 팔로워 유저들 목록 불러오기 (세부 정보): GET/user/followers
+// 팔로잉, 팔로워 정보: Followers[], Followings[] 는 프로필에서 개수 표현만 하기 위해 DB 에서 attribute 를 통해 id 만 가지고 왔었다.
+// 팔로잉, 팔로워 리스트에서 그 유저들의 세부 정보를 가져와보서 표현하자
+router.get('/followers', isLoggedIn, async (req, res, next) => {
+  try {
+    const user = await User.findOne({
+      where: { id: req.user.id }  // '나' 를 먼저 찾고 거기서 getFollowers 로 Followers 를 찾음
+    }); 
+    if (!user) {
+      res.status(403).send('팔로워 목록 불러오기 실패, 존재하지 않는 계정입니다.') // 실존 유저인지 검사 
+    }
+    const followers = await user.getFollowers({
+      limit: parseInt(req.query.limit, 10), // 팔로워를 처음에 3명만 로드하고, 그 뒤로도 3명씩 로드
+      // 주소에서 
+      // limit: 3, => 팔로워를 처음에 3명만 로드하고, 그 뒤로 "더보기" 버튼을 누를 때마다 3명씩 로드
+      // 3개, 6개, 9개 ... limit 이 3씩 더해지기 때문에 profile.js 에서 state 로 만들어 3 씩 올려준다.
+    });
+    res.status(200).json(followers); 
+  } catch (error) {
+    console.error(error);
+    next();
+  }
+})
+
+// ** 팔로잉 유저들 목록 불러오기 (세부 정보): GET/user/followings
+router.get('/followings', isLoggedIn, async (req, res, next) => {
+  try {
+    const user = await User.findOne({
+      where: { id: req.user.id }  // '나' 를 먼저 찾고 거기서 getFollowers 로 Followers 를 찾음
+    }); 
+    if (!user) {
+      res.status(403).send('팔로잉 목록 불러오기 실패, 존재하지 않는 계정입니다.') // 실존 유저인지 검사 
+    }
+    const followings = await user.getFollowings({
+      limit: parseInt(req.query.limit, 10),// 팔로잉을 처음에 3명만 로드하고, 그 뒤로도 3명씩 로드
+      // limit: 3, => 팔로워를 처음에 3명만 로드하고, 그 뒤로도 3명씩 로드
+    });
+    res.status(200).json(followings); 
+  } catch (error) {
+    console.error(error);
+    next();
+  }
+})
+
 
 // 사용자(userInfo) 정보 (Jinny2) 가져오기: GET /user/1 => LOAD_USER
 router.get('/:userId', async (req, res, next) => { 
@@ -208,7 +259,7 @@ router.post('/login', isNotLoggedIn,(req, res, next) => { // 미들웨어 확장
       // status 번호 중 403 은 금지, 허용되지 않은 요청이다.
       // 로그인시 나는 클라이언트 에러는 보통 401(미승인, 비인증)을 쓴다.
       // 궁금하면 http 상태코드를 검색하면 됨 (각 코드별 뜻)
-      // 200 번대 성공, 300번대 리다이렉트나 캐싱, 400번대 클라이언트에러, 500번대 서버에러
+      // 상태 코드: 200 번대 성공, 300번대 리다이렉트나 캐싱, 400번대 클라이언트에러, 500번대 서버에러
     }
     // 진짜 로그인 실행 (passport 에 들어있는 것)
     // 자사서비스 로그인이 아닌 passport 로그인
@@ -385,41 +436,8 @@ router.delete('/follower/:userId', isLoggedIn, async (req, res, next) => {
   }
 })
 
-// ** 팔로워 유저들 목록 불러오기 (세부 정보): GET/user/followers
-// 팔로잉, 팔로워 정보: Followers[], Followings[] 는 프로필에서 개수 표현만 하기 위해 DB 에서 attribute 를 통해 id 만 가지고 왔었다.
-// 팔로잉, 팔로워 리스트에서 그 유저들의 세부 정보를 가져와보서 표현하자
-router.get('/followers', isLoggedIn, async (req, res, next) => {
-  try {
-    const user = await User.findOne({
-      where: { id: req.user.id }  // '나' 를 먼저 찾고 거기서 getFollowers 로 Followers 를 찾음
-    }); 
-    if (!user) {
-      res.status(403).send('팔로워 목록 불러오기 실패, 존재하지 않는 계정입니다.') // 실존 유저인지 검사 
-    }
-    const followers = await user.getFollowers();
-    res.status(200).json(followers); 
-  } catch (error) {
-    console.error(error);
-    next();
-  }
-})
 
-// ** 팔로잉 유저들 목록 불러오기 (세부 정보): GET/user/followings
-router.get('/followings', isLoggedIn, async (req, res, next) => {
-  try {
-    const user = await User.findOne({
-      where: { id: req.user.id }  // '나' 를 먼저 찾고 거기서 getFollowers 로 Followers 를 찾음
-    }); 
-    if (!user) {
-      res.status(403).send('팔로잉 목록 불러오기 실패, 존재하지 않는 계정입니다.') // 실존 유저인지 검사 
-    }
-    const followings = await user.getFollowings();
-    res.status(200).json(followings); 
-  } catch (error) {
-    console.error(error);
-    next();
-  }
-})
+
 
 
 module.exports = router;

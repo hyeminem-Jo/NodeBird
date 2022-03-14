@@ -172,7 +172,7 @@ function loadPostsAPI(lastId) {
   return axios.get(`/posts?lastId=${lastId || 0}`); 
   // get 은 데이터를 넣지 못하므로 쿼리 스트링으로 넣어준다.
   // get 으로 데이터를 보내려면 주소(/posts) + ? + key(lastId) = 값(lastId) 의 형태로 넣어주어야 한다.
-  // 쿼리 스트링: 위와 같은 key=value 형태로 &로 구분하여 넣어준다.
+  // 쿼리 스트링: ? 를 처음에 붙인 뒤 위와 같은 key=value 형태로 &로 구분하여 넣어준다.
   // => `/posts?lastId=${lastId}&limit=10&offset=10`
   // get 의 장점: 주소에 데이터가 담겨있어 주소를 캐싱하면 그 데이터까지 캐싱됨 (patch 등은 x)
   // lastId || 0 => 게시글이 0개 일 때 lastId 가 undefined 가 되면 0 으로 대체

@@ -5,7 +5,7 @@ import Proptypes from "prop-types";
 import { useDispatch } from "react-redux";
 import { REMOVE_FOLLOWER_REQUEST, UNFOLLOW_REQUEST } from "../reducers/user";
 
-const FollowList = ({ header, data }) => {
+const FollowList = ({ header, data, onClickMore, loading }) => {
   const dispatch = useDispatch();
 
   // 내가 팔로잉하던 사람 언팔하기(팔로잉 제거) & 내 팔로워 차단하기(팔로워 제거)
@@ -38,12 +38,13 @@ const FollowList = ({ header, data }) => {
         header={<div>{header}</div>}
         loadMore={
           <div style={{ textAlign: "center", margin: "10px 0" }}>
-            <Button>더 보기</Button>
+            <Button onClick={onClickMore} loading={loading}>더 보기</Button>
           </div>
         }
         bordered
         dataSource={data} // me.Followings[]/Followers[]
-        renderItem={(item) => ( // me.Followings[ {id: 1} ... ] / Followers[] 요소
+        renderItem={(item) => ( // me.Followings, Followers[] 요소 
+          // ex) [ {id: 1, nickname: jinny} ... ]
           <List.Item style={{ marginTop: "20px" }}>
             <Card actions={[<StopOutlined key="stop" onClick={onCancel(item.id)} />]}>
               {/* onClick 고차함수 : 반복문 안에서 onClick 같은 것이 있으면 그 "반복문에 대한 데이터" 를 onClick 에 넘겨주어야 함 */}
@@ -64,6 +65,8 @@ const FollowList = ({ header, data }) => {
 FollowList.propTypes = {
   header: Proptypes.string.isRequired,
   data: Proptypes.array.isRequired,
+  onClickMore: Proptypes.func.isRequired,
+  loading: Proptypes.bool.isRequired,
 };
 
 export default FollowList;

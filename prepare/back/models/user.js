@@ -48,13 +48,13 @@ module.exports = (sequelize, DataTypes) => {
       through: "Follow",
       as: "Followers", // addFollowers()
       foreignKey: "FollowingId", 
-      // 팔로워 리스트 key: 나를 '팔로잉' 하고 있는 사람들
+      // 팔로워 리스트 key: 나를 '팔로잉' 한 사람들
     });
     db.User.belongsToMany(db.User, {
       through: "Follow",
       as: "Followings",
       foreignKey: "FollowerId",
-      // 팔로잉 리스트 key: 내가 '팔로잉' 하는 사람들
+      // 팔로잉 리스트 key: 내가 '팔로워' 인 사람들
     });
   };
   return User;
