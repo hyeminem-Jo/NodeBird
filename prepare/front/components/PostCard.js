@@ -1,17 +1,22 @@
 import React, { useCallback, useState } from "react";
 import PropTypes from "prop-types";
-import { useDispatch, useSelector } from "react-redux";
 import { Card, Button, Popover, Avatar, List, Comment } from "antd";
+import { useDispatch, useSelector } from "react-redux";
 import { RetweetOutlined, HeartOutlined, MessageOutlined, EllipsisOutlined, HeartTwoTone } from "@ant-design/icons";
-import CommentForm from "./CommentForm";
+import Link from 'next/link';
+import moment from 'moment';
 
 import PostImages from "./PostImages";
+import CommentForm from "./CommentForm";
 import PostCardContent from "./PostCardContent";
-import FollowButton from "./FollowButton";
 import { LIKE_POST_REQUEST, REMOVE_POST_REQUEST, UNLIKE_POST_REQUEST, RETWEET_REQUEST } from "../reducers/post";
+import FollowButton from "./FollowButton";
 
 // antd 기능: Card 컴포넌트 기능 cover
 // post 에 Images 가 하나 라도 있다면 이미지 표현
+
+moment.locale('ko');
+// 기본이 영어이기 때문에 한글로 바꿔줌
 
 const PostCard = ({ post }) => {
   
@@ -136,21 +141,42 @@ const PostCard = ({ post }) => {
           <Card 
             cover={post.Retweet.Images[0] && <PostImages images={post.Retweet.Images} />} 
           >
+            <div style={{ float: 'right', color: '#bbb' }}>{moment(post.createdAt).format('YYYY.MM.DD')}</div>
+            {/* <div style={{ float: 'right', color: '#bbb' }}>{moment(post.createdAt).startOf('hour').fromNow()}</div> */}
+            {/* moment() 에 현재 날짜가 뜸 => 그안에 createdAt 을 넣으면 게시글 생성일이 자동으로  moment 객체로 바뀜 */}
+            {/* format() 표시 종류: https://momentjs.com/ */}
+            {/* moment().calendar */}
             <Card.Meta 
-              avatar={<Avatar>{post.Retweet.User.nickname[0]}</Avatar>}
+            // 리트윗 원본 작성자 프로필 동그라미를 누르면 그 사람이 쓴 원본 게시글로 이동
+              avatar={(
+                // '/user/12' 
+                <Link href={`/user/${post.Retweet.User.id}`}>
+                  <a><Avatar>{post.Retweet.User.nickname[0]}</Avatar></a>
+                </Link>
+              )}
               title={post.Retweet.User.nickname}
               description={<PostCardContent postData={post.Retweet.content} />}
             />
           </Card>
         )
         : ( // 리트윗 게시글이 아닐 경우
-          <Card.Meta 
-            avatar={<Avatar>{post.User.nickname[0]}</Avatar>}
-            // 그냥 post.User.nickname 의 첫번째 글짜를 아바타로 ex) 구글 프로필에 '조'
-            title={post.User.nickname}
-            description={<PostCardContent postData={post.content} />}
-            // description={post.content} 에서, 해시태그 기능을 위해 아예 컴포넌트로 빼준다.
-          />
+          <>
+            <div style={{ float: 'right', color: '#bbb' }}>{moment(post.createdAt).format('YYYY.MM.DD')}</div>
+            {/* <div style={{ float: 'right', color: '#bbb' }}>{moment(post.createdAt).startOf('hour').fromNow()}</div> */}
+            <Card.Meta 
+            // 작성자 프로필 동그라미를 누르면 그 사람이 쓴 게시글로 이동
+              avatar={(
+                // '/user/12' 
+                <Link href={`/user/${post.User.id}`}>
+                  <a><Avatar>{post.User.nickname[0]}</Avatar></a>
+                </Link>
+              )}
+              // 그냥 post.User.nickname 의 첫번째 글짜를 아바타로 ex) 구글 프로필에 '조'
+              title={post.User.nickname}
+              description={<PostCardContent postData={post.content} />}
+              // description={post.content} 에서, 해시태그 기능을 위해 아예 컴포넌트로 빼준다.
+            />
+          </>
         )}
 
       </Card>
@@ -166,9 +192,16 @@ const PostCard = ({ post }) => {
               dataSource={post.Comments}
               renderItem={(item) => (
                 <li>
+                  <div style={{ float: 'right', color: '#bbb' }}>{moment(item.createdAt).startOf('hour').fromNow()}</div>
                   <Comment 
                     author={item.User.nickname}
-                    avatar={<Avatar>{item.User.nickname[0]}</Avatar>}
+                    avatar={(
+                      // /user/13 
+                      // 댓글의 아바타를 눌러도 그 사람의 게시글을 볼 수 있도록
+                      <Link href={`/user/${item.User.id}`}>
+                        <a><Avatar>{item.User.nickname[0]}</Avatar></a>
+                      </Link>
+                    )}
                     content={item.content}
                   />
                 </li>
