@@ -1,6 +1,6 @@
 // reducers > post.js
 
-import produce from 'immer';
+import produce from '../util/produce'; // immer
 
 export const initialState = {
   mainPosts: [], // 실제로는 이렇게 비어있는 채로 서버에서 받는다. 

@@ -1,4 +1,9 @@
 const Sequelize = require('sequelize');
+const comment = require('./comment');
+const hashtag = require('./hashtag');
+const image = require('./image');
+const post = require('./post');
+const user = require('./user');
 
 // 배포할 때는 프로덕션으로 바뀌고, 일단 개발할 때는 기본값은 development
 const env = process.env.NODE_ENV || 'development';
@@ -8,11 +13,16 @@ const db ={};
 
 const sequelize = new Sequelize(config.database, config.username, config.password, config)
 
-db.Comment = require('./comment')(sequelize, Sequelize)
-db.Hashtag = require('./hashtag')(sequelize, Sequelize)
-db.Image = require('./image')(sequelize, Sequelize)
-db.Post = require('./post')(sequelize, Sequelize)
-db.User = require('./user')(sequelize, Sequelize)
+// 클래스들을 그대로 넣어줌
+db.Comment = comment;
+db.Hashtag = hashtag;
+db.Image = image;
+db.Post = post;
+db.User = user;
+
+Object.keys(db).forEach(modelName => {
+  db[modelName].init(sequelize);
+})
 
 // 이 코드를 통해 sequelize 가 node, MySQL 을 연결해준다.
 // sequelize 는 내부적으로 mysql2 를 사용하고 있다.
