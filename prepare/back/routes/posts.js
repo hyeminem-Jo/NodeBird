@@ -24,7 +24,7 @@ router.get("/", async (req, res, next) => { // GET /posts/
     // 마지막으로 게시된 것이 11번(lastId) 인 상태에서 다시 로드할 때, 11번(lastId)보다 작은 10번 이하 게시글들이 10개 불려야함
 
     const posts = await Post.findAll({
-      where,
+      where, // where: 게시글 가져오는 것에 대한 조건, 조건이 없으면 초기 로딩이 아닐 때도 최신 10개만 가져옴.
     // 이전에 findOne() 에서는 하나의 id 를 특정하여 데이터 하나씩 꺼냈지만 findAll() 은 들어있는 데이터 전부 꺼냄
     // findOne() 의 경우, where: { UserId: 1 }, UserId 가 1번인 게시글을 전부 가져오기 처럼 하면 findAll() 과 똑같은 동작을 함
       // 하지만 게시글 전부를 가져오진 않고 로딩 될때마다 10개씩만 꺼내서 주기

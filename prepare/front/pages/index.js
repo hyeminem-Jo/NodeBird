@@ -5,6 +5,8 @@ import PostForm from "../components/PostForm";
 import PostCard from "../components/PostCard";
 import { LOAD_POSTS_REQUEST } from "../reducers/post";
 import { LOAD_USER_REQUEST } from "../reducers/user";
+// import wrapper from "../store/configureStore";
+
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -23,6 +25,10 @@ const Home = () => {
       // 또 다른 해결 방법: dependency[] 에 RetweetId 도 같이 넣어 리트윗 게시글에서만 실행 되도록
     }
   }, [retweetError]);
+
+
+  // 화면이 로딩된 후에 useEffect 에서 사용자 정보, 게시글 정보가 받아와지는데, 이 useEffect 부분 때문에 문제가 발생한다. 화면이 처음 로딩될 때는 사용자, 게시글 데이터가 없다가 나중에야 불러오니까 그 잠깐 사이에 데이터의 공백때문에 로그아웃, 게시글이 없는 것처럼 보인다.
+  // 해결: 그렇다면 처음 화면을 받아올 때부터 먼저 데이터를 불러오면 데이터가 채워진 채로 화면이 그려진다. 그렇게 하려면 이 Home 컴포넌트보다 먼저 실행되는 것이 필요한데, next-redux-wrapper 에서 제공하는 ssr 용 메서드(getServerSideProps, getStaticProps) 를 넣어주면 된다.
 
   // 동시에 게시글들, 사용자 정보 불러오기
   // 메인 페이지에 접근할 때마다 렌더되어 다음이 실행
@@ -79,6 +85,11 @@ const Home = () => {
     // useSelector로 개별 포스트를 바로 가져올 수 있다면 PostCard 내부에서 해도 되지만 그럴 수 없기 때문에 props로 넘김 (post={post})
   );
 };
+
+// // 위의 화면을 그리는 동작을 먼저 실행하기 전에 서버쪽에서 먼저 실행하게 해줌
+// export const getServerSideProps = wrapper.getServerSideProps((context) => {
+
+// })
 
 export default Home;
 

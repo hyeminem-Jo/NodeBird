@@ -30,6 +30,7 @@ const configureStore = () => {
   return store; // state , reducer 를 포함한 것
 };
 
+// next-redux-wrapper 로 만듦
 const wrapper = createWrapper(configureStore, {
   debug: process.env.NODE_ENV === "development",
 });

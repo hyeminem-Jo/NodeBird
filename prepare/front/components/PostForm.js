@@ -105,7 +105,7 @@ const PostForm = () => {
       
       <div>
         {/* image input 에 올라간 이미지가 post images 라우터로 전달됨 */}
-        <input type="file" name="image" multiple hidden ref={imageInput} onChange={onChangeImages} />
+        <input key={imagePaths} type="file" name="image" multiple hidden ref={imageInput} onChange={onChangeImages} />
         {/* onChange: 이미지 업로드 창이 뜨고 이미지를 선택 후 확인을 누르면 실행 */}
         {/* <input type="file" name="image2" multiple hidden ref={imageInput} /> */}
         {/* 하나 이상의 input 을 통해 라우터로 갈 때, fills('image') */}
